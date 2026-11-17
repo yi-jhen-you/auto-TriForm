@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>工程三階表單半自動生成系統 V5 (含自動暫存與專案存取)</title>
+  <title>工程三階表單半自動生成系統 V6</title>
   <style>
     * { box-sizing: border-box; font-family: "Microsoft JhengHei", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { margin: 0; padding: 0; background-color: #e2e8f0; color: #0f172a; font-size: 14px; }
@@ -16,7 +16,8 @@
     .chrome-tab.active { background: #f8fafc; color: #1e40af; border-top: 3px solid #2563eb; padding-top: 7px; box-shadow: 0 -2px 6px rgba(0,0,0,0.05); }
     .tab-badge { font-size: 0.75rem; padding: 2px 7px; border-radius: 99px; font-weight: 700; }
     .badge-ok { background: #dcfce7; color: #166534; }
-    .badge-err { background: #fee2e2; color: #dc2626; }
+    /* 需求 8：防呆警示全面改為黃色系 */
+    .badge-err { background: #fef08a; color: #854d0e; border: 1px solid #eab308; }
 
     .header-right-actions { padding-bottom: 6px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
     .autosave-indicator { font-size: 0.78rem; font-weight: 700; color: #065f46; background: #d1fae5; border: 1px solid #6ee7b7; padding: 4px 9px; border-radius: 99px; display: inline-flex; align-items: center; gap: 4px; margin-right: 4px; }
@@ -27,7 +28,7 @@
     .tab-pane.active { display: block; }
 
     /* 頁籤 1：左大右小配置 */
-    .tab1-layout { display: grid; grid-template-columns: 1fr 350px; gap: 18px; align-items: start; }
+    .tab1-layout { display: grid; grid-template-columns: 1fr 360px; gap: 18px; align-items: start; }
     .right-sidebar { position: sticky; top: 60px; display: flex; flex-direction: column; gap: 16px; }
 
     .card { background: #ffffff; border-radius: 10px; border: 1.5px solid #cbd5e1; box-shadow: 0 2px 5px rgba(0,0,0,0.04); padding: 16px 18px; margin-bottom: 18px; }
@@ -51,8 +52,6 @@
     .btn-success:hover { background: #047857; }
     .btn-purple { background: #4f46e5; color: #fff; }
     .btn-purple:hover { background: #4338ca; }
-    .btn-teal { background: #0d9488; color: #fff; }
-    .btn-teal:hover { background: #0f766e; }
     .btn-amber { background: #d97706; color: #fff; }
     .btn-amber:hover { background: #b45309; }
     .btn-danger-ghost { background: #fff; border: 1px solid #fca5a5; color: #dc2626; padding: 2px 6px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.75rem; }
@@ -65,22 +64,38 @@
     input[type="text"]:focus, textarea:focus, select:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.12); }
     input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: #2563eb; vertical-align: middle; }
 
-    /* 符號快捷列 */
-    .symbol-toolbar { position: sticky; top: 48px; z-index: 240; background: #1e293b; color: #fff; padding: 7px 14px; border-radius: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; box-shadow: 0 3px 8px rgba(0,0,0,0.12); }
+    /* 符號快捷列 (固定於 top: 48px，高度約 42px) */
+    .symbol-toolbar { position: sticky; top: 48px; z-index: 245; background: #1e293b; color: #fff; padding: 7px 14px; border-radius: 8px 8px 0 0; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; box-shadow: 0 3px 8px rgba(0,0,0,0.12); }
     .sym-group { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
     .sym-btn { background: #334155; color: #f8fafc; border: 1px solid #475569; border-radius: 4px; padding: 3px 9px; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
     .sym-btn:hover { background: #2563eb; border-color: #60a5fa; }
 
-    /* 防呆警示列 */
+    /* 需求 8：防呆警示列改為黃色系 */
     .validation-banner { padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; font-weight: 700; font-size: 0.86rem; }
     .val-ok { background: #dcfce7; border: 1.5px solid #86efac; color: #166534; }
-    .val-err { background: #fef2f2; border: 1.5px solid #fca5a5; color: #991b1b; }
+    .val-err { background: #fef9c3; border: 2px solid #eab308; color: #854d0e; }
 
-    /* ==================== 所見即所得編輯大表格 ==================== */
-    .wysiwyg-table-wrap { overflow-x: auto; border: 2px solid #000; background: #fff; }
-    table.wysiwyg-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-    table.wysiwyg-table th { background: #e2e8f0; color: #000; font-weight: 700; font-size: 0.88rem; border: 1px solid #000; padding: 7px 4px; text-align: center; }
-    table.wysiwyg-table td { border: 1px solid #000; padding: 5px 5px; vertical-align: top; background: #fff; word-wrap: break-word; overflow-wrap: break-word; }
+    /* ==================== 所見即所得編輯大表格 (需求 9：釘選表頭列) ==================== */
+    /* 注意：為了讓 table th 的 position: sticky 對視窗生效，外層不可設 overflow-x: auto */
+    .wysiwyg-table-wrap { border: 2.5px solid #000; background: #fff; }
+    table.wysiwyg-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
+    table.wysiwyg-table thead th {
+      position: sticky;
+      top: 88px; /* 緊貼於頂部頁籤列(48px) + 符號快捷列(40px) 正下方 */
+      z-index: 230;
+      background: #e2e8f0;
+      color: #000;
+      font-weight: 700;
+      font-size: 0.88rem;
+      border-bottom: 2px solid #000;
+      border-right: 1px solid #000;
+      padding: 8px 4px;
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }
+    table.wysiwyg-table thead th:last-child { border-right: none; }
+    table.wysiwyg-table td { border-bottom: 1px solid #000; border-right: 1px solid #000; padding: 5px 5px; vertical-align: top; background: #fff; word-wrap: break-word; overflow-wrap: break-word; }
+    table.wysiwyg-table td:last-child { border-right: none; }
 
     td.phase-cell-pre { background-color: #dbeafe !important; color: #1e3a8a; font-weight: 700; text-align: center; vertical-align: middle !important; }
     td.phase-cell-mid { background-color: #fef3c7 !important; color: #78350f; font-weight: 700; text-align: center; vertical-align: middle !important; }
@@ -90,7 +105,7 @@
     tr.row-phase-mid td.flow-cell { background-color: #fffbeb; }
     tr.row-phase-post td.flow-cell { background-color: #f0fdf4; }
 
-    .cell-input { width: 100%; border: 1px solid #cbd5e1 !important; background: #fff !important; padding: 4px 6px !important; font-size: 0.86rem !important; border-radius: 4px !important; color: #000; line-height: 1.35; resize: vertical; white-space: pre-wrap; word-break: break-word; }
+    .cell-input { width: 100%; border: 1px solid #cbd5e1 !important; background: #fff !important; padding: 4px 6px !important; font-size: 0.86rem !important; border-radius: 4px !important; color: #000; line-height: 1.25; resize: vertical; white-space: pre-wrap; word-break: break-word; }
     .cell-input:focus { border-color: #2563eb !important; box-shadow: 0 0 0 2px rgba(37,99,235,0.15) !important; }
 
     /* 拖曳手把與高亮線 */
@@ -113,22 +128,24 @@
     .rec-chk-simple { display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; font-weight: 700; color: #1e40af; cursor: pointer; background: #eff6ff; padding: 2px 6px; border-radius: 4px; border: 1px solid #bfdbfe; }
     .rec-chk-simple input { width: 14px; height: 14px; margin: 0; }
 
-    /* 錯誤紅框樣式 */
-    .input-error { border: 1.5px solid #dc2626 !important; background-color: #fef2f2 !important; }
-    .err-msg { color: #dc2626; font-size: 0.74rem; font-weight: 700; display: block; margin-top: 2px; }
+    /* 需求 8：防呆錯誤黃框樣式 (與紅色安衛表單明確區隔) */
+    .input-error { border: 2px solid #eab308 !important; background-color: #fef9c3 !important; box-shadow: 0 0 0 2px rgba(234,179,8,0.25) !important; }
+    .err-msg { color: #a16207; background: #fef08a; padding: 1px 4px; border-radius: 3px; font-size: 0.74rem; font-weight: 700; display: inline-block; margin-top: 2px; }
 
     /* 右側安衛表單管理區 */
-    .safety-list { max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
-    .safety-item { display: flex; align-items: center; gap: 5px; background: #fff5f5; padding: 4px 6px; border-radius: 6px; border: 1px solid #fca5a5; }
+    .safety-list { max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+    .safety-item { display: flex; flex-direction: column; gap: 3px; background: #fff5f5; padding: 5px 7px; border-radius: 6px; border: 1px solid #fca5a5; }
+    .safety-item-row { display: flex; align-items: center; gap: 5px; }
     .safety-item input[type="text"] { font-size: 0.82rem; font-weight: 700; color: #991b1b; padding: 4px 6px; border: 1px solid #fecaca; background: #fff; }
 
-    /* A4 預覽紙張 */
+    /* A4 預覽紙張 (需求 2 & 4：12pt 字級、1.0 倍行高) */
     .paper-preview-wrapper { background: #cbd5e1; padding: 20px; border-radius: 8px; overflow-x: auto; display: flex; justify-content: center; }
     .paper-a4-portrait { background: #fff; width: 794px; min-height: 1123px; padding: 34px 40px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); color: #000; position: relative; }
     .paper-a4-landscape { background: #fff; width: 1080px; min-height: 720px; padding: 28px 30px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); color: #000; overflow: hidden; }
     .word-doc-area, .word-doc-area * { font-family: "標楷體", "DFKai-SB", "BiauKai", serif; color: #000; }
-    .word-table { width: 100%; border-collapse: collapse; border: 1.5pt solid #000; font-size: 10.5pt; line-height: 1.35; table-layout: fixed; }
-    .word-table th, .word-table td { border: 0.75pt solid #000; padding: 4px 5px; vertical-align: middle; word-wrap: break-word; overflow-wrap: break-word; }
+    .word-table { width: 100%; border-collapse: collapse; font-size: 12pt; line-height: 1.0; table-layout: fixed; }
+    .word-table th, .word-table td { border: 0.75pt solid #000; padding: 4px 5px; vertical-align: middle; word-wrap: break-word; overflow-wrap: break-word; line-height: 1.0; font-size: 12pt; }
+    .word-table-thick { border: 2.25pt solid #000 !important; }
 
     /* 頁籤 3 流程圖微調列 */
     .adjust-toolbar { display: flex; flex-wrap: wrap; gap: 12px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 9px 14px; align-items: center; }
@@ -148,7 +165,7 @@
 </head>
 <body>
 
-<!-- 頂部 Chrome 風格頁籤列 + 自動暫存狀態 + JSON 專案匯出入 -->
+<!-- 頂部 Chrome 風格頁籤列 (已依需求 1 移除 JSON 匯出入按鈕) -->
 <div class="chrome-header">
   <div class="tabs-bar">
     <div class="chrome-tab active" onclick="switchTab(1)" id="tabBtn1">
@@ -164,9 +181,6 @@
   </div>
   <div class="header-right-actions">
     <span id="autosaveStatus" class="autosave-indicator" title="所有變更皆會自動儲存於瀏覽器中，重新整理不會遺失">💾 已自動暫存</span>
-    <button class="btn btn-teal" onclick="exportProjectJson()" title="將目前三階表單存成 .json 專案檔備份">📤 匯出專案檔 (.json)</button>
-    <button class="btn btn-outline" onclick="triggerImportJson()" title="載入先前儲存的 .json 專案檔">📥 匯入專案檔</button>
-    <input type="file" id="importJsonInput" accept=".json" style="display:none;" onchange="handleImportJsonFile(event)">
     <button class="btn btn-purple" onclick="openPasteModal()">📋 智慧貼上 Word 標準表</button>
     <button class="btn btn-outline" onclick="confirmResetSample()">重置預設範例</button>
     <button class="btn btn-amber" onclick="downloadAllThreeDocs()">📦 一鍵打包下載三階表單 (.doc)</button>
@@ -220,13 +234,13 @@
             <table class="wysiwyg-table">
               <thead>
                 <tr>
-                  <th style="width:56px;">階段</th>
+                  <th style="width:54px;">階段</th>
                   <th style="width:175px;">施工工項 (流程)<br><small style="color:#dc2626;">(勾選 ※ 安衛點可複選)</small></th>
                   <th style="width:170px;">管理項目 (A)<br><small style="color:#0033CC;">(勾選 ★ 檢驗停留點)</small></th>
                   <th style="width:230px;">抽查標準 (B)<br><small style="color:#475569;">(定量 / 定性標準)</small></th>
                   <th style="width:50px;">抽查<br>時機</th>
                   <th style="width:85px;">抽查方法</th>
-                  <th style="width:85px;">抽查頻率<br><small style="color:#dc2626;">(★禁填不定期)</small></th>
+                  <th style="width:85px;">抽查頻率<br><small style="color:#a16207;">(★禁填不定期)</small></th>
                   <th style="width:82px;">不符合之<br>處置方法</th>
                   <th style="width:165px;">管理紀錄<br><small style="color:#475569;">(勾選本表 / 填其他表)</small></th>
                   <th style="width:68px;">備註</th>
@@ -241,7 +255,7 @@
         <!-- 抽查標準表 Word 即時預覽 -->
         <div class="card">
           <div class="card-title">
-            <span>👁️ 抽查標準表 Word 輸出排版即時預覽（已自動合併相同管理紀錄，並印出勾選之安衛表單名稱）</span>
+            <span>👁️ 抽查標準表 Word 輸出排版即時預覽（12pt、1.0倍行高、粗外框、工項橫排）</span>
           </div>
           <div class="paper-preview-wrapper">
             <div class="paper-a4-landscape word-doc-area" id="standardPreviewPaper"></div>
@@ -257,24 +271,27 @@
           </div>
           <div class="form-field">
             <label>1. 抽查標準表標題 (頁籤 1)：</label>
-            <input type="text" id="stdTitleInput" value="表 02448 隧道防水膜施工抽查標準" oninput="syncGlobalConfig()">
+            <input type="text" id="stdTitleInput" value="表 02448 隧道防水膜施工抽查標準" placeholder="請填入編號與名稱 (必填)" oninput="syncGlobalConfig()">
+            <span id="err_stdTitle" class="err-msg" style="display:none;">⚠ 請填入抽查標準表標題與編號</span>
           </div>
           <div class="form-field">
             <label style="color:#0033CC;">2. 施工抽查表編號與名稱 (頁籤 2 & 管理紀錄 & 流程圖)：</label>
-            <input type="text" id="chkFormTitleInput" value="表 02448 隧道防水層施工抽查紀錄表" oninput="syncGlobalConfig()">
+            <input type="text" id="chkFormTitleInput" value="表 02448 隧道防水層施工抽查紀錄表" placeholder="請填入編號與名稱 (必填)" oninput="syncGlobalConfig()">
+            <span id="err_chkTitle" class="err-msg" style="display:none;">⚠ 請填入施工抽查表編號與名稱</span>
           </div>
           <div class="form-field" style="margin-bottom:4px;">
             <label style="color:#1e40af;">3. 施工流程圖表頭編號與名稱 (頁籤 3 頂部)：</label>
-            <input type="text" id="flowTitleInput" value="02448 隧道防水層施工" oninput="syncGlobalConfig()">
+            <input type="text" id="flowTitleInput" value="02448 隧道防水層施工" placeholder="請填入編號與名稱 (必填)" oninput="syncGlobalConfig()">
+            <span id="err_flowTitle" class="err-msg" style="display:none;">⚠ 請填入施工流程圖表頭編號與名稱</span>
           </div>
         </div>
 
         <div class="card card-green">
           <div class="card-title" style="color:#15803d;">
-            <span><b style="color:#CC0000;">※</b> 安衛表單索引庫 (可直接改名)</span>
+            <span><b style="color:#CC0000;">※</b> 安衛表單索引庫 (請補上計畫編號)</span>
           </div>
           <p style="font-size:0.78rem; color:#475569; margin-top:0; margin-bottom:8px;">
-            可直接點擊下方文字框修改安衛表編號與名稱，全站已勾選的工項會自動同步更新：
+            被工項勾選使用的安衛表，請務必於名稱前方補上<b>表單編號</b>（未填編號將亮黃框提醒）：
           </p>
           <div class="safety-list" id="safetyFormsListContainer"></div>
           <div style="display:flex; flex-direction:column; gap:6px;">
@@ -298,7 +315,8 @@
         </div>
       </div>
 
-      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap:10px; margin-bottom:10px;">
+      <!-- 需求 3：已移除「編號欄標題」填入框 -->
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:10px; margin-bottom:10px;">
         <div class="form-field" style="margin:0;">
           <label>頂部監造計畫 / 機關抬頭：</label>
           <input type="text" id="chkPlanHeader" value="台灣世曦工程顧問股份有限公司" oninput="onChecklistHeaderInput()">
@@ -318,10 +336,6 @@
         <div class="form-field" style="margin:0;">
           <label>施工作業應提出證明文件記錄：</label>
           <input type="text" id="chkProofDocText" value="施工圖" oninput="onChecklistHeaderInput()">
-        </div>
-        <div class="form-field" style="margin:0;">
-          <label>編號欄標題：</label>
-          <input type="text" id="chkSerialLabel" value="編 號" oninput="onChecklistHeaderInput()">
         </div>
       </div>
 
@@ -419,7 +433,7 @@
     <div class="modal-title">📋 智慧貼上 Word「抽查標準表」自動解析匯入</div>
     <p style="font-size:0.86rem; color:#475569; margin-top:0; line-height:1.5;">
       請在 Word 選取整張「抽查標準表」按 <code>Ctrl+C</code>，點擊下方虛線框按 <code>Ctrl+V</code> 貼上。<br>
-      ✨ <b>智慧歸位引擎</b>：不論原本表格的 <b style="color:#0033CC;">★</b> 在哪一欄，系統都會統一歸位至<b>「管理項目(A)」</b>；所有 <b style="color:#CC0000;">※</b> 則自動歸位至<b>「施工工項」</b>！
+      ✨ <b>智慧歸位與防呆提醒</b>：匯入後系統會將 <b style="color:#0033CC;">★</b> 歸位至「管理項目(A)」、<b style="color:#CC0000;">※</b> 歸位至「施工工項」，並<b>自動清空右上角 3 個表單標題（亮起黃框提醒您輸入新表號）</b>，但會完整保留您的安衛表單索引庫！
     </p>
     <div id="pasteEditableArea" class="paste-editable" contenteditable="true"></div>
     <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -436,12 +450,12 @@
 
 <script>
   // ==================== LocalStorage 金鑰與全域狀態 ====================
-  const STORAGE_KEY = 'THREE_TIER_FORM_SYSTEM_V5_STATE';
+  const STORAGE_KEY = 'THREE_TIER_FORM_SYSTEM_V6_STATE';
 
   let safetyForms = [];
   let appData = [];
 
-  // Word A4 標準邊界常數 (上下 2.54cm = 72pt、左右 3.18cm = 90pt；可印安全框 415pt × 698pt)
+  // Word A4 標準邊界常數 (上下 2.54cm = 72pt、左右 3.18cm = 90pt；可印範圍 415pt × 698pt)
   const A4_PAGE_W_PT = 595;
   const A4_PAGE_H_PT = 842;
   const MARGIN_LEFT_PT = 90;
@@ -467,12 +481,11 @@
 
   window.onload = () => {
     document.addEventListener('focusin', (e) => {
-      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') && e.target.type !== 'checkbox' && e.target.type !== 'file') {
+      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') && e.target.type !== 'checkbox') {
         lastFocusedInput = e.target;
       }
     });
 
-    // 優先嘗試從瀏覽器 LocalStorage 載入上次編輯狀態；若無才載入預設範例
     const restored = loadStateFromLocalStorage();
     if (!restored) {
       loadSampleData(true);
@@ -488,10 +501,10 @@
     window.scrollTo(winX, winY);
   }
 
-  // ==================== 自動暫存 (LocalStorage) & 專案 JSON 匯出匯入 ====================
+  // ==================== 自動暫存 (LocalStorage) ====================
   function buildProjectStateObject() {
     return {
-      version: '5.0',
+      version: '6.0',
       savedAt: new Date().toISOString(),
       globalConfig: {
         stdTitle: document.getElementById('stdTitleInput').value,
@@ -504,7 +517,6 @@
         projectName: document.getElementById('chkProjectName').value,
         subProject: document.getElementById('chkSubProject').value,
         proofDocText: document.getElementById('chkProofDocText').value,
-        serialLabel: document.getElementById('chkSerialLabel').value,
         showProofRow: document.getElementById('chkShowProofRow').checked,
         showSafetyBottom: document.getElementById('chkShowSafetyBottom').checked,
         showDefectBottom: document.getElementById('chkShowDefectBottom').checked
@@ -537,7 +549,6 @@
       document.getElementById('chkProjectName').value = state.checklistHeader.projectName ?? '';
       document.getElementById('chkSubProject').value = state.checklistHeader.subProject ?? '';
       document.getElementById('chkProofDocText').value = state.checklistHeader.proofDocText ?? '';
-      document.getElementById('chkSerialLabel').value = state.checklistHeader.serialLabel ?? '編 號';
       document.getElementById('chkShowProofRow').checked = !!state.checklistHeader.showProofRow;
       document.getElementById('chkShowSafetyBottom').checked = state.checklistHeader.showSafetyBottom !== false;
       document.getElementById('chkShowDefectBottom').checked = state.checklistHeader.showDefectBottom !== false;
@@ -590,60 +601,19 @@
     }
   }
 
-  function exportProjectJson() {
-    const state = buildProjectStateObject();
-    const baseName = (document.getElementById('flowTitleInput').value.trim() || '三階表單專案').replace(/[\\/:*?"<>|]/g, '_');
-    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${baseName}_專案備份.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showToast(`📤 已匯出專案備份檔：${baseName}_專案備份.json`);
-  }
-
-  function triggerImportJson() {
-    const inp = document.getElementById('importJsonInput');
-    inp.value = '';
-    inp.click();
-  }
-
-  function handleImportJsonFile(e) {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      try {
-        const parsed = JSON.parse(evt.target.result);
-        if (applyProjectStateObject(parsed)) {
-          saveStateToLocalStorage();
-          showToast(`📥 成功匯入專案檔：${file.name}`);
-        } else {
-          showToast('專案檔格式不正確，無法載入！', true);
-        }
-      } catch (err) {
-        showToast('讀取 JSON 檔案失敗，請確認檔案是否損毀！', true);
-      }
-    };
-    reader.readAsText(file, 'utf-8');
-  }
-
   function confirmResetSample() {
-    if (confirm('確定要重置為預設「02448 隧道防水層施工」範例嗎？\n（若目前有未匯出的重要編輯內容，建議先點「📤 匯出專案檔」備份）')) {
+    if (confirm('確定要重置為預設範例嗎？')) {
       loadSampleData(false);
     }
   }
 
-  // ==================== 預設範例載入 ====================
+  // ==================== 需求 6：預設範例與 4 種預設安衛表單名稱（預設不帶編號以測試編號防呆） ====================
   function loadSampleData(silent = false) {
     safetyForms = [
-      { id: 'sf1', name: '表 01523-W09 隧道防水層施工安全衛生抽查紀錄表' },
-      { id: 'sf2', name: '表 01523-W01 一般施工安全衛生現場抽查表' },
-      { id: 'sf3', name: '表 01523-W05 高風險作業安全衛生抽查紀錄表' },
-      { id: 'sf4', name: '表 01523-W08 局限空間作業安全衛生抽查紀錄表' }
+      { id: 'sf1', name: '一般作業停留點安全檢核表' },
+      { id: 'sf2', name: '局限空間作業安全抽查紀錄表' },
+      { id: 'sf3', name: '工地環境保護檢查記錄表' },
+      { id: 'sf4', name: '立即發生危險作業抽查表' }
     ];
 
     document.getElementById('stdTitleInput').value = '表 02448 隧道防水膜施工抽查標準';
@@ -654,7 +624,6 @@
     document.getElementById('chkProjectName').value = '';
     document.getElementById('chkSubProject').value = '';
     document.getElementById('chkProofDocText').value = '施工圖';
-    document.getElementById('chkSerialLabel').value = '編 號';
     document.getElementById('chkShowProofRow').checked = false;
     document.getElementById('chkShowSafetyBottom').checked = true;
     document.getElementById('chkShowDefectBottom').checked = true;
@@ -761,6 +730,7 @@
 
   function syncGlobalConfig() {
     document.getElementById('editorTableHeading').innerHTML = colorizeSymbolsHtml(document.getElementById('stdTitleInput').value);
+    validateAllData();
     renderStandardPreview();
     renderChecklistPreview();
     updateDiagram();
@@ -796,7 +766,15 @@
     lastFocusedInput.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
-  // ==================== 右下角安衛表單索引庫 ====================
+  // ==================== 需求 6 & 7：右下角安衛表單索引庫（含未填編號黃框防呆） ====================
+  function isSafetyFormUsed(sfId) {
+    return appData.some(f => f.isSafetyPoint && Array.isArray(f.safetyFormIds) && f.safetyFormIds.includes(sfId));
+  }
+
+  function hasNumberCode(str) {
+    return /\d/.test(String(str || ''));
+  }
+
   function renderSafetyFormsManager() {
     const container = document.getElementById('safetyFormsListContainer');
     container.innerHTML = '';
@@ -805,12 +783,17 @@
       return;
     }
     safetyForms.forEach(sf => {
+      const used = isSafetyFormUsed(sf.id);
+      const missingCode = used && !hasNumberCode(sf.name);
       const div = document.createElement('div');
       div.className = 'safety-item';
       div.innerHTML = `
-        <b style="color:#CC0000; flex-shrink:0;">※</b>
-        <input type="text" value="${escapeHtml(sf.name)}" oninput="updateSafetyFormName('${sf.id}', this.value)" title="直接修改安衛表單編號與名稱">
-        <button class="btn-danger-ghost" onclick="removeSafetyForm('${sf.id}')" title="刪除此安衛表">✕</button>
+        <div class="safety-item-row">
+          <b style="color:#CC0000; flex-shrink:0;">※</b>
+          <input type="text" id="sf_inp_${sf.id}" class="${missingCode ? 'input-error' : ''}" value="${escapeHtml(sf.name)}" oninput="updateSafetyFormName('${sf.id}', this.value)" title="直接修改安衛表單編號與名稱">
+          <button class="btn-danger-ghost" onclick="removeSafetyForm('${sf.id}')" title="刪除此安衛表">✕</button>
+        </div>
+        <span id="sf_err_${sf.id}" class="err-msg" style="display:${missingCode ? 'inline-block' : 'none'};">⚠ 此表已被勾選引用，請補上表單編號(數字)</span>
       `;
       container.appendChild(div);
     });
@@ -823,6 +806,14 @@
     document.querySelectorAll(`.sf-label-${sfId}`).forEach(el => {
       el.textContent = newName;
     });
+    const used = isSafetyFormUsed(sfId);
+    const missingCode = used && !hasNumberCode(newName);
+    const inp = document.getElementById('sf_inp_' + sfId);
+    const err = document.getElementById('sf_err_' + sfId);
+    if (inp) inp.classList.toggle('input-error', missingCode);
+    if (err) err.style.display = missingCode ? 'inline-block' : 'none';
+
+    validateAllData();
     renderStandardPreview();
     renderChecklistPreview();
     updateDiagram();
@@ -855,7 +846,6 @@
     }).filter(Boolean);
   }
 
-  // ==================== 組合每一列「管理紀錄」最終輸出文字 ====================
   function composeRecordText(flow, cr) {
     const mainFormName = document.getElementById('chkFormTitleInput').value.trim() || '施工抽查紀錄表';
     const parts = [];
@@ -874,9 +864,43 @@
     return parts.join('\n');
   }
 
-  // ==================== 防呆檢核引擎 ====================
+  // ==================== 需求 5、7、8：防呆檢核引擎 (全面黃色警示 + 3大標題必填防呆 + 安衛表編號防呆) ====================
   function validateAllData() {
     const errors = [];
+
+    // 1. 檢查右上角 3 大共用基本索引標題是否空白或缺少編號
+    const stdTitleEl = document.getElementById('stdTitleInput');
+    const chkTitleEl = document.getElementById('chkFormTitleInput');
+    const flowTitleEl = document.getElementById('flowTitleInput');
+
+    const stdVal = stdTitleEl.value.trim();
+    const chkVal = chkTitleEl.value.trim();
+    const flowVal = flowTitleEl.value.trim();
+
+    const stdInvalid = !stdVal || !hasNumberCode(stdVal);
+    const chkInvalid = !chkVal || !hasNumberCode(chkVal);
+    const flowInvalid = !flowVal || !hasNumberCode(flowVal);
+
+    stdTitleEl.classList.toggle('input-error', stdInvalid);
+    chkTitleEl.classList.toggle('input-error', chkInvalid);
+    flowTitleEl.classList.toggle('input-error', flowInvalid);
+
+    document.getElementById('err_stdTitle').style.display = stdInvalid ? 'inline-block' : 'none';
+    document.getElementById('err_chkTitle').style.display = chkInvalid ? 'inline-block' : 'none';
+    document.getElementById('err_flowTitle').style.display = flowInvalid ? 'inline-block' : 'none';
+
+    if (stdInvalid) errors.push('右上角「1. 抽查標準表標題」尚未填寫或缺少表單編號！');
+    if (chkInvalid) errors.push('右上角「2. 施工抽查表編號與名稱」尚未填寫或缺少表單編號！');
+    if (flowInvalid) errors.push('右上角「3. 施工流程圖表頭編號與名稱」尚未填寫或缺少編號！');
+
+    // 2. 檢查被引用的安衛表單是否已填寫編號(含數字)
+    safetyForms.forEach(sf => {
+      if (isSafetyFormUsed(sf.id) && !hasNumberCode(sf.name)) {
+        errors.push(`右下角安衛表單「${sf.name}」已被工項勾選引用，請補上該計畫之表單編號！`);
+      }
+    });
+
+    // 3. 檢查表格內各欄位與停留點「不定期」防呆
     appData.forEach(flow => {
       if (!flow.flowName.trim()) {
         errors.push(`【${getPhaseLabel(flow.phase)}】有施工工項名稱空白`);
@@ -907,20 +931,20 @@
     const badge = document.getElementById('navBadge');
     if (errors.length === 0) {
       banner.className = 'validation-banner val-ok';
-      banner.innerHTML = `✅ 防呆檢核通過：所有必填欄位完整，且 ★ 檢驗停留點無「不定期」頻率衝突！`;
+      banner.innerHTML = `✅ 防呆檢核通過：所有標題編號、安衛表編號與檢驗停留點頻率皆符合規範！`;
       badge.className = 'tab-badge badge-ok';
       badge.textContent = '✓ 檢核通過';
     } else {
       banner.className = 'validation-banner val-err';
       banner.innerHTML = `
-        <div>⚠️ 發現 ${errors.length} 項防呆異常（請修正表格內紅框處）：</div>
+        <div>⚠️ 發現 ${errors.length} 項防呆提醒（請修正黃色警示框處）：</div>
         <ul style="margin:4px 0 0 0; padding-left:20px; font-size:0.82rem;">
-          ${errors.slice(0, 4).map(e => `<li>${escapeHtml(e)}</li>`).join('')}
-          ${errors.length > 4 ? `<li>...還有 ${errors.length - 4} 項異常</li>` : ''}
+          ${errors.slice(0, 5).map(e => `<li>${escapeHtml(e)}</li>`).join('')}
+          ${errors.length > 5 ? `<li>...還有 ${errors.length - 5} 項提醒</li>` : ''}
         </ul>
       `;
       badge.className = 'tab-badge badge-err';
-      badge.textContent = `⚠ ${errors.length} 異常`;
+      badge.textContent = `⚠ ${errors.length} 提醒`;
     }
     return errors;
   }
@@ -1099,7 +1123,7 @@
               const tdFreq = document.createElement('td');
               tdFreq.innerHTML = `
                 <textarea id="inp_freq_${cr.id}" rows="2" class="cell-input ${isFreqInvalid ? 'input-error' : ''}" style="text-align:center;" placeholder="如：每次" oninput="onCriteriaInput('${flow.id}','${mgmt.id}','${cr.id}','freq',this.value)">${escapeHtml(cr.freq)}</textarea>
-                <span id="err_freq_${cr.id}" class="err-msg" style="display:${(mgmt.isStopPoint && cr.freq.includes('不定期')) ? 'block' : 'none'};">⚠ 停留點禁填不定期</span>
+                <span id="err_freq_${cr.id}" class="err-msg" style="display:${(mgmt.isStopPoint && cr.freq.includes('不定期')) ? 'inline-block' : 'none'};">⚠ 停留點禁填不定期</span>
               `;
               tr.appendChild(tdFreq);
 
@@ -1148,7 +1172,7 @@
     });
   }
 
-  // ==================== 局部更新輸入事件 (同步觸發自動暫存) ====================
+  // ==================== 局部更新輸入事件 ====================
   function onFlowNameInput(flowId, val) {
     const f = appData.find(x => x.id === flowId);
     if (!f) return;
@@ -1194,7 +1218,7 @@
       const errSpan = document.getElementById('err_freq_' + crId);
       const isBad = (!val.trim()) || (m.isStopPoint && val.includes('不定期'));
       if (el) el.classList.toggle('input-error', isBad);
-      if (errSpan) errSpan.style.display = (m.isStopPoint && val.includes('不定期')) ? 'block' : 'none';
+      if (errSpan) errSpan.style.display = (m.isStopPoint && val.includes('不定期')) ? 'inline-block' : 'none';
     }
     validateAllData();
     renderStandardPreview();
@@ -1541,22 +1565,23 @@
     return flatRows;
   }
 
-  // ==================== 輸出 Word「抽查標準表」HTML ====================
+  // ==================== 需求 2 & 4：輸出 Word「抽查標準表」HTML (第二層工項改橫排、12pt、行距 1.0 倍高、外框粗框 2.25pt) ====================
   function generateStandardTableHtml() {
-    const stdTitle = document.getElementById('stdTitleInput').value.trim() || '施工抽查標準表';
+    const stdTitle = document.getElementById('stdTitleInput').value.trim() || '（請填寫抽查標準表標題）';
     const flatRows = buildFlattenedRows();
 
+    // 第二層工項改為橫列顯示，加寬第 2 欄至 9.5%
     const colgroupHtml = `
       <colgroup>
         <col style="width:3.5%;">
-        <col style="width:4.5%;">
-        <col style="width:14%;">
-        <col style="width:26%;">
+        <col style="width:9.5%;">
+        <col style="width:13.5%;">
+        <col style="width:23.5%;">
         <col style="width:6.5%;">
-        <col style="width:8.5%;">
-        <col style="width:7.5%;">
         <col style="width:8%;">
-        <col style="width:16%;">
+        <col style="width:7%;">
+        <col style="width:7.5%;">
+        <col style="width:15.5%;">
         <col style="width:5.5%;">
       </colgroup>
     `;
@@ -1565,52 +1590,53 @@
     flatRows.forEach(r => {
       trs += `<tr>`;
       if (r.phaseSpan > 0) {
-        trs += `<td rowspan="${r.phaseSpan}" align="center" style="text-align:center;">${r.phaseLabel.split('').join('<br/>')}</td>`;
+        trs += `<td rowspan="${r.phaseSpan}" align="center" style="text-align:center; font-size:12pt; line-height:1.0;">${r.phaseLabel.split('').join('<br/>')}</td>`;
       }
       if (r.flowSpan > 0) {
-        const safetyPrefix = r.isSafetyPoint ? `<span style="color:#CC0000;font-weight:bold;">※</span><br/>` : '';
-        trs += `<td rowspan="${r.flowSpan}" align="center" style="text-align:center;">${safetyPrefix}${colorizeSymbolsHtml(r.flowName).split('').join('<br/>')}</td>`;
+        // 需求 2：抽查標準裡面第二層工項改成橫列顯示
+        const safetyPrefix = r.isSafetyPoint ? `<span style="color:#CC0000;font-weight:bold;">※</span>` : '';
+        trs += `<td rowspan="${r.flowSpan}" align="center" style="text-align:center; font-size:12pt; line-height:1.0;">${safetyPrefix}${colorizeSymbolsHtml(r.flowName)}</td>`;
       }
       if (r.mgmtSpan > 0) {
         const starPrefix = r.isStopPoint ? `<span style="color:#0033CC;font-weight:bold;">★</span>` : '';
-        trs += `<td rowspan="${r.mgmtSpan}">${starPrefix}${colorizeSymbolsHtml(r.mgmtName)}</td>`;
+        trs += `<td rowspan="${r.mgmtSpan}" style="font-size:12pt; line-height:1.0;">${starPrefix}${colorizeSymbolsHtml(r.mgmtName)}</td>`;
       }
       trs += `
-        <td>${colorizeSymbolsHtml(r.std)}</td>
-        <td align="center" style="text-align:center;">${r.phaseLabel}</td>
-        <td align="center" style="text-align:center;">${colorizeSymbolsHtml(r.method)}</td>
-        <td align="center" style="text-align:center;">${colorizeSymbolsHtml(r.freq)}</td>
-        <td align="center" style="text-align:center;">${colorizeSymbolsHtml(r.action)}</td>
+        <td style="font-size:12pt; line-height:1.0;">${colorizeSymbolsHtml(r.std)}</td>
+        <td align="center" style="text-align:center; font-size:12pt; line-height:1.0;">${r.phaseLabel}</td>
+        <td align="center" style="text-align:center; font-size:12pt; line-height:1.0;">${colorizeSymbolsHtml(r.method)}</td>
+        <td align="center" style="text-align:center; font-size:12pt; line-height:1.0;">${colorizeSymbolsHtml(r.freq)}</td>
+        <td align="center" style="text-align:center; font-size:12pt; line-height:1.0;">${colorizeSymbolsHtml(r.action)}</td>
       `;
       if (r.recordSpan > 0) {
-        trs += `<td rowspan="${r.recordSpan}">${colorizeSymbolsHtml(r.record)}</td>`;
+        trs += `<td rowspan="${r.recordSpan}" style="font-size:12pt; line-height:1.0;">${colorizeSymbolsHtml(r.record)}</td>`;
       }
-      trs += `<td>${colorizeSymbolsHtml(r.note)}</td>`;
+      trs += `<td style="font-size:12pt; line-height:1.0;">${colorizeSymbolsHtml(r.note)}</td>`;
       trs += `</tr>`;
     });
 
     return `
-      <div style="text-align:center; font-family:'標楷體','DFKai-SB',serif; font-size:15.5pt; font-weight:bold; margin-bottom:8pt;">
+      <div style="text-align:center; font-family:'標楷體','DFKai-SB',serif; font-size:16pt; font-weight:bold; margin-bottom:8pt; line-height:1.0;">
         ${colorizeSymbolsHtml(stdTitle)}
       </div>
-      <table class="word-table" border="1" cellspacing="0" cellpadding="4" style="width:100%; border-collapse:collapse; border:1.5pt solid #000; font-family:'標楷體','DFKai-SB',serif; font-size:10.5pt; table-layout:fixed;">
+      <table class="word-table word-table-thick" border="1" cellspacing="0" cellpadding="4" style="width:100%; border-collapse:collapse; border:2.25pt solid #000; mso-border-alt:solid windowtext 0.75pt; mso-border-top-alt:solid windowtext 2.25pt; mso-border-bottom-alt:solid windowtext 2.25pt; mso-border-left-alt:solid windowtext 2.25pt; mso-border-right-alt:solid windowtext 2.25pt; font-family:'標楷體','DFKai-SB',serif; font-size:12pt; line-height:1.0; table-layout:fixed;">
         ${colgroupHtml}
         <thead>
-          <tr style="background:#f8fafc; font-weight:bold; text-align:center;">
-            <td colspan="2" align="center">施工流程</td>
-            <td align="center">管理項目(A)</td>
-            <td align="center">抽查標準(B)</td>
-            <td align="center">抽查<br/>時機</td>
-            <td align="center">抽查方法</td>
-            <td align="center">抽查頻率</td>
-            <td align="center">不符合之<br/>處置方法</td>
-            <td align="center">管理紀錄</td>
-            <td align="center">備註</td>
+          <tr style="background:#f8fafc; font-weight:bold; text-align:center; font-size:12pt; line-height:1.0;">
+            <td colspan="2" align="center" style="border-top:2.25pt solid #000; border-left:2.25pt solid #000; font-size:12pt; line-height:1.0;">施工流程</td>
+            <td align="center" style="border-top:2.25pt solid #000; font-size:12pt; line-height:1.0;">管理項目(A)</td>
+            <td align="center" style="border-top:2.25pt solid #000; font-size:12pt; line-height:1.0;">抽查標準(B)</td>
+            <td align="center" style="border-top:2.25pt solid #000; font-size:12pt; line-height:1.0;">抽查<br/>時機</td>
+            <td align="center" style="border-top:2.25pt solid #000; font-size:12pt; line-height:1.0;">抽查方法</td>
+            <td align="center" style="border-top:2.25pt solid #000; font-size:12pt; line-height:1.0;">抽查頻率</td>
+            <td align="center" style="border-top:2.25pt solid #000; font-size:12pt; line-height:1.0;">不符合之<br/>處置方法</td>
+            <td align="center" style="border-top:2.25pt solid #000; font-size:12pt; line-height:1.0;">管理紀錄</td>
+            <td align="center" style="border-top:2.25pt solid #000; border-right:2.25pt solid #000; font-size:12pt; line-height:1.0;">備註</td>
           </tr>
         </thead>
         <tbody>${trs}</tbody>
       </table>
-      <p style="margin-top:6pt; font-family:'標楷體','DFKai-SB',serif; font-size:10.5pt; font-weight:bold;">
+      <p style="margin-top:6pt; font-family:'標楷體','DFKai-SB',serif; font-size:12pt; line-height:1.0; font-weight:bold;">
         <span style="color:#0033CC;">★</span>檢驗停留點/<span style="color:#CC0000;">※</span><span style="color:#CC0000;">安衛查驗點</span>：廠商應完成自主檢查後向監造單位申請查驗；未標示者，監造單位應辦理不定期抽查。
       </p>
     `;
@@ -1621,15 +1647,14 @@
     if (paper) paper.innerHTML = generateStandardTableHtml();
   }
 
-  // ==================== 輸出「施工抽查表單 (頁籤 2)」HTML ====================
+  // ==================== 需求 2 & 3：輸出「施工抽查表單 (頁籤 2)」HTML (12pt、行距 1.0 倍高、固定「編 號」標籤) ====================
   function generateChecklistTableHtml() {
     const planHeader = document.getElementById('chkPlanHeader').value.trim();
     const docCode = document.getElementById('chkDocCode').value.trim();
-    const formTitle = document.getElementById('chkFormTitleInput').value.trim() || '施工抽查紀錄表';
+    const formTitle = document.getElementById('chkFormTitleInput').value.trim() || '（請填寫施工抽查表編號與名稱）';
     const projectName = document.getElementById('chkProjectName').value.trim();
     const subProject = document.getElementById('chkSubProject').value.trim();
     const proofDocText = document.getElementById('chkProofDocText').value.trim();
-    const serialLabel = document.getElementById('chkSerialLabel').value.trim() || '編 號';
 
     const showProofRow = document.getElementById('chkShowProofRow').checked;
     const showSafetyBottom = document.getElementById('chkShowSafetyBottom').checked;
@@ -1662,21 +1687,21 @@
     flatRows.forEach(r => {
       bodyTrs += `<tr>`;
       if (r.phaseSpan > 0) {
-        bodyTrs += `<td rowspan="${r.phaseSpan}" align="center" style="text-align:center; padding:3px 2px;">${r.phaseLabel.split('').join('<br/>')}</td>`;
+        bodyTrs += `<td rowspan="${r.phaseSpan}" align="center" style="text-align:center; padding:3px 2px; font-size:12pt; line-height:1.0;">${r.phaseLabel.split('').join('<br/>')}</td>`;
       }
       if (r.flowSpan > 0) {
         const safetyPrefix = r.isSafetyPoint ? `<span style="color:#CC0000;font-weight:bold;">※</span><br/>` : '';
-        bodyTrs += `<td rowspan="${r.flowSpan}" align="center" style="text-align:center; padding:3px 2px;">${safetyPrefix}${colorizeSymbolsHtml(r.flowName).split('').join('<br/>')}</td>`;
+        bodyTrs += `<td rowspan="${r.flowSpan}" align="center" style="text-align:center; padding:3px 2px; font-size:12pt; line-height:1.0;">${safetyPrefix}${colorizeSymbolsHtml(r.flowName).split('').join('<br/>')}</td>`;
       }
       if (r.mgmtSpan > 0) {
         const starPrefix = r.isStopPoint ? `<span style="color:#0033CC;font-weight:bold;">★</span>` : '';
-        bodyTrs += `<td rowspan="${r.mgmtSpan}">${starPrefix}${colorizeSymbolsHtml(r.mgmtName)}</td>`;
+        bodyTrs += `<td rowspan="${r.mgmtSpan}" style="font-size:12pt; line-height:1.0;">${starPrefix}${colorizeSymbolsHtml(r.mgmtName)}</td>`;
       }
       bodyTrs += `
-        <td>${colorizeSymbolsHtml(r.std)}</td>
-        <td></td>
-        <td align="center"></td>
-        <td></td>
+        <td style="font-size:12pt; line-height:1.0;">${colorizeSymbolsHtml(r.std)}</td>
+        <td style="font-size:12pt; line-height:1.0;"></td>
+        <td align="center" style="font-size:12pt; line-height:1.0;"></td>
+        <td style="font-size:12pt; line-height:1.0;"></td>
       `;
       bodyTrs += `</tr>`;
     });
@@ -1688,14 +1713,14 @@
         : '（一般/特定施工安全衛生抽查紀錄表）';
       safetyBottomHtml = `
         <tr>
-          <td colspan="3" align="center" style="text-align:center; font-weight:bold;">
+          <td colspan="3" align="center" style="text-align:center; font-weight:bold; font-size:12pt; line-height:1.0;">
             <span style="color:#CC0000;font-weight:bold;">※</span>安全衛生查驗點
           </td>
-          <td style="font-size:10.5pt;">
+          <td style="font-size:12pt; line-height:1.0;">
             檢視承攬廠商安全衛生自動檢查表單填報情形及填具施工安全衛生抽查紀錄表<br/>
             <span style="color:#CC0000; font-weight:bold;">${sfText}</span>
           </td>
-          <td style="font-size:10.5pt;">□施工前<br/>□施工中<br/>□施工後<br/><br/>□不定期</td>
+          <td style="font-size:12pt; line-height:1.0;">□施工前<br/>□施工中<br/>□施工後<br/><br/>□不定期</td>
           <td></td>
           <td></td>
         </tr>
@@ -1707,9 +1732,9 @@
     if (showDefectBottom) {
       defectBottomHtml = `
         <tr>
-          <td rowspan="3" align="center" style="text-align:center; font-weight:bold; padding:3px 2px;">缺<br/>失<br/>複<br/>查<br/>結<br/>果</td>
-          <td align="center" style="text-align:center; padding:3px 2px;">施<br/>工<br/>前</td>
-          <td colspan="5" style="font-size:10.5pt; line-height:1.45;">
+          <td rowspan="3" align="center" style="text-align:center; font-weight:bold; padding:3px 2px; font-size:12pt; line-height:1.0;">缺<br/>失<br/>複<br/>查<br/>結<br/>果</td>
+          <td align="center" style="text-align:center; padding:3px 2px; font-size:12pt; line-height:1.0;">施<br/>工<br/>前</td>
+          <td colspan="5" style="font-size:12pt; line-height:1.0;">
             □已完成改善（檢附改善前中後照片）<br/>
             □未完成改善，填至<span style="color:#CC0000;">「不合格追蹤管制表第＿項」</span>進行追蹤改善<br/>
             複查日期：  年  月  日<br/>
@@ -1717,8 +1742,8 @@
           </td>
         </tr>
         <tr>
-          <td align="center" style="text-align:center; padding:3px 2px;">施<br/>工<br/>中</td>
-          <td colspan="5" style="font-size:10.5pt; line-height:1.45;">
+          <td align="center" style="text-align:center; padding:3px 2px; font-size:12pt; line-height:1.0;">施<br/>工<br/>中</td>
+          <td colspan="5" style="font-size:12pt; line-height:1.0;">
             □已完成改善（檢附改善前中後照片）<br/>
             □未完成改善，填至<span style="color:#CC0000;">「不合格追蹤管制表第＿項」</span>進行追蹤改善<br/>
             複查日期：  年  月  日<br/>
@@ -1726,8 +1751,8 @@
           </td>
         </tr>
         <tr>
-          <td align="center" style="text-align:center; padding:3px 2px;">施<br/>工<br/>後</td>
-          <td colspan="5" style="font-size:10.5pt; line-height:1.45;">
+          <td align="center" style="text-align:center; padding:3px 2px; font-size:12pt; line-height:1.0;">施<br/>工<br/>後</td>
+          <td colspan="5" style="font-size:12pt; line-height:1.0;">
             □已完成改善（檢附改善前中後照片）<br/>
             □未完成改善，填至<span style="color:#CC0000;">「不合格追蹤管制表第＿項」</span>進行追蹤改善<br/>
             複查日期：  年  月  日<br/>
@@ -1735,7 +1760,7 @@
           </td>
         </tr>
         <tr>
-          <td colspan="7" style="font-size:10pt; line-height:1.42; padding:5pt 6pt;">
+          <td colspan="7" style="font-size:12pt; line-height:1.0; padding:5pt 6pt;">
             <b>備註：</b><br/>
             1. 抽查標準及實際檢查情形應具體明確（例：磚砌完成後須不透光）或量化尺寸（例：磚縫 7mm~10mm）。<br/>
             2. 抽查結果合格者註明「○」，不合格者註明「╳」，如無需檢查之項目則打「／」。<br/>
@@ -1746,72 +1771,72 @@
         </tr>
       `;
       bottomSignatureHtml = `
-        <table border="0" cellspacing="0" cellpadding="0" style="width:100%; border-collapse:collapse; border:none; margin-top:8pt; font-family:'標楷體','DFKai-SB',serif; font-size:11.5pt; font-weight:bold;">
+        <table border="0" cellspacing="0" cellpadding="0" style="width:100%; border-collapse:collapse; border:none; margin-top:8pt; font-family:'標楷體','DFKai-SB',serif; font-size:12pt; line-height:1.0; font-weight:bold;">
           <tr>
-            <td style="width:50%; border:none; padding:4pt 2pt; text-align:left;">監造工地負責（授權）人：</td>
-            <td style="width:50%; border:none; padding:4pt 2pt; text-align:left;">監造現場人員簽名：</td>
+            <td style="width:50%; border:none; padding:4pt 2pt; text-align:left; font-size:12pt; line-height:1.0;">監造工地負責（授權）人：</td>
+            <td style="width:50%; border:none; padding:4pt 2pt; text-align:left; font-size:12pt; line-height:1.0;">監造現場人員簽名：</td>
           </tr>
         </table>
       `;
     }
 
     return `
-      ${planHeader ? `<div style="text-align:center; font-family:'標楷體','DFKai-SB',serif; font-size:13.5pt; font-weight:bold; margin-bottom:2pt;">${escapeHtml(planHeader)}</div>` : ''}
-      <div style="display:flex; justify-content:${docCode ? 'space-between' : 'center'}; align-items:baseline; font-family:'標楷體','DFKai-SB',serif; margin-bottom:6pt;">
-        <span style="font-size:13.5pt; font-weight:bold;">${colorizeSymbolsHtml(formTitle)}</span>
-        ${docCode ? `<span style="font-size:11.5pt; font-weight:bold;">${escapeHtml(docCode)}</span>` : ''}
+      ${planHeader ? `<div style="text-align:center; font-family:'標楷體','DFKai-SB',serif; font-size:14pt; font-weight:bold; margin-bottom:3pt; line-height:1.0;">${escapeHtml(planHeader)}</div>` : ''}
+      <div style="display:flex; justify-content:${docCode ? 'space-between' : 'center'}; align-items:baseline; font-family:'標楷體','DFKai-SB',serif; margin-bottom:6pt; line-height:1.0;">
+        <span style="font-size:14pt; font-weight:bold;">${colorizeSymbolsHtml(formTitle)}</span>
+        ${docCode ? `<span style="font-size:12pt; font-weight:bold;">${escapeHtml(docCode)}</span>` : ''}
       </div>
 
-      <table class="word-table" border="1" cellspacing="0" cellpadding="4" style="width:100%; border-collapse:collapse; border:1.5pt solid #000; font-family:'標楷體','DFKai-SB',serif; font-size:10.5pt; table-layout:fixed;">
+      <table class="word-table word-table-thick" border="1" cellspacing="0" cellpadding="4" style="width:100%; border-collapse:collapse; border:2.25pt solid #000; font-family:'標楷體','DFKai-SB',serif; font-size:12pt; line-height:1.0; table-layout:fixed;">
         ${colgroupHtml}
         <tr>
-          <td colspan="3" style="font-weight:bold;">工程名稱</td>
-          <td>${escapeHtml(projectName)}</td>
-          <td style="font-weight:bold; text-align:center;">${escapeHtml(serialLabel)}</td>
-          <td colspan="2"></td>
+          <td colspan="3" style="font-weight:bold; font-size:12pt; line-height:1.0;">工程名稱</td>
+          <td style="font-size:12pt; line-height:1.0;">${escapeHtml(projectName)}</td>
+          <td style="font-weight:bold; text-align:center; font-size:12pt; line-height:1.0;">編 號</td>
+          <td colspan="2" style="font-size:12pt; line-height:1.0;"></td>
         </tr>
         <tr>
-          <td colspan="3" style="font-weight:bold;">分項工程名稱</td>
-          <td colspan="4">${escapeHtml(subProject)}</td>
+          <td colspan="3" style="font-weight:bold; font-size:12pt; line-height:1.0;">分項工程名稱</td>
+          <td colspan="4" style="font-size:12pt; line-height:1.0;">${escapeHtml(subProject)}</td>
         </tr>
         <tr>
-          <td colspan="3" style="font-weight:bold;">抽查位置</td>
-          <td></td>
-          <td style="font-weight:bold; text-align:center;">抽查日期</td>
-          <td colspan="2" align="center" style="text-align:center;">  年  月  日</td>
+          <td colspan="3" style="font-weight:bold; font-size:12pt; line-height:1.0;">抽查位置</td>
+          <td style="font-size:12pt; line-height:1.0;"></td>
+          <td style="font-weight:bold; text-align:center; font-size:12pt; line-height:1.0;">抽查日期</td>
+          <td colspan="2" align="center" style="text-align:center; font-size:12pt; line-height:1.0;">  年  月  日</td>
         </tr>
         <tr>
-          <td colspan="3" style="font-weight:bold;">抽查時機</td>
-          <td colspan="4">
+          <td colspan="3" style="font-weight:bold; font-size:12pt; line-height:1.0;">抽查時機</td>
+          <td colspan="4" style="font-size:12pt; line-height:1.0;">
             □<span style="color:#0033CC;font-weight:bold;">★</span>檢驗停留點 （□<span style="color:#CC0000;font-weight:bold;">※</span>安衛查驗點）  □不定期抽查
           </td>
         </tr>
         <tr>
-          <td colspan="3" style="font-weight:bold;">施工流程</td>
-          <td colspan="4">□施工前  □施工中檢查  □施工完成檢查</td>
+          <td colspan="3" style="font-weight:bold; font-size:12pt; line-height:1.0;">施工流程</td>
+          <td colspan="4" style="font-size:12pt; line-height:1.0;">□施工前  □施工中檢查  □施工完成檢查</td>
         </tr>
         <tr>
-          <td colspan="3" style="font-weight:bold;">抽查結果</td>
-          <td colspan="4">○抽查合格   ╳有缺失需改正   ／無此抽查項目</td>
+          <td colspan="3" style="font-weight:bold; font-size:12pt; line-height:1.0;">抽查結果</td>
+          <td colspan="4" style="font-size:12pt; line-height:1.0;">○抽查合格   ╳有缺失需改正   ／無此抽查項目</td>
         </tr>
         ${showProofRow ? `
         <tr>
-          <td colspan="3" style="font-weight:bold;">施工作業應提出證明文件記錄</td>
-          <td>${escapeHtml(proofDocText)}</td>
-          <td colspan="3">□齊全<br/>□不齊全</td>
+          <td colspan="3" style="font-weight:bold; font-size:12pt; line-height:1.0;">施工作業應提出證明文件記錄</td>
+          <td style="font-size:12pt; line-height:1.0;">${escapeHtml(proofDocText)}</td>
+          <td colspan="3" style="font-size:12pt; line-height:1.0;">□齊全<br/>□不齊全</td>
         </tr>
         ` : ''}
-        <tr style="font-weight:bold; text-align:center; background:#f8fafc;">
-          <td colspan="3" rowspan="2" align="center" style="text-align:center;">
+        <tr style="font-weight:bold; text-align:center; background:#f8fafc; font-size:12pt; line-height:1.0;">
+          <td colspan="3" rowspan="2" align="center" style="text-align:center; font-size:12pt; line-height:1.0;">
             管理項目<br/>（<span style="color:#0033CC;">★</span>檢驗停留點／<br/><span style="color:#CC0000;">※</span>安衛查驗點）
           </td>
-          <td rowspan="2" align="center" style="text-align:center;">抽查標準<br/>（定量定性）</td>
-          <td rowspan="2" align="center" style="text-align:center;">實際抽查情形<br/>（敘述抽查值）</td>
-          <td rowspan="2" align="center" style="text-align:center;">抽查<br/>結果</td>
-          <td align="center" style="text-align:center; height:18pt;">備註</td>
+          <td rowspan="2" align="center" style="text-align:center; font-size:12pt; line-height:1.0;">抽查標準<br/>（定量定性）</td>
+          <td rowspan="2" align="center" style="text-align:center; font-size:12pt; line-height:1.0;">實際抽查情形<br/>（敘述抽查值）</td>
+          <td rowspan="2" align="center" style="text-align:center; font-size:12pt; line-height:1.0;">抽查<br/>結果</td>
+          <td align="center" style="text-align:center; height:18pt; font-size:12pt; line-height:1.0;">備註</td>
         </tr>
-        <tr style="font-weight:bold; text-align:center; background:#f8fafc;">
-          <td align="center" style="text-align:center; font-size:9.5pt;">抽查人簽名<br/><span style="font-size:8pt; font-weight:normal;">(加註日期/時間)</span></td>
+        <tr style="font-weight:bold; text-align:center; background:#f8fafc; font-size:12pt; line-height:1.0;">
+          <td align="center" style="text-align:center; font-size:10pt; line-height:1.0;">抽查人簽名<br/><span style="font-size:8.5pt; font-weight:normal;">(加註日期/時間)</span></td>
         </tr>
         ${bodyTrs}
         ${safetyBottomHtml}
@@ -1825,7 +1850,7 @@
     document.getElementById('checklistPreviewPaper').innerHTML = generateChecklistTableHtml();
   }
 
-  // ==================== 施工流程圖 (Word 標準邊界：上下 2.54cm / 左右 3.18cm) ====================
+  // ==================== 需求 3：施工流程圖 (簡化 Word 標準邊界文字) ====================
   function getMappedFlowData() {
     const phaseWeights = { 'pre': 1, 'mid': 2, 'post': 3 };
     const sortedFlows = [...appData].sort((a, b) => {
@@ -2317,18 +2342,19 @@
 
     if (alertBox) {
       if (isHeightOverflow || isWidthOverflow) {
-        alertBox.style.background = '#fef2f2';
-        alertBox.style.border = '1.5px solid #fca5a5';
-        alertBox.style.color = '#b91c1c';
+        alertBox.style.background = '#fef9c3';
+        alertBox.style.border = '2px solid #eab308';
+        alertBox.style.color = '#854d0e';
         const reasons = [];
-        if (isHeightOverflow) reasons.push(`高度 ${geo.totalHeight}pt 超過標準邊界上限 ${SAFE_BOX_H_PT}pt (請設換欄斷點或縮小箭頭/高度)`);
-        if (isWidthOverflow) reasons.push(`寬度 ${geo.maxUsedX}pt 超過標準邊界上限 ${SAFE_BOX_W_PT}pt (請將圖塊寬度調小)`);
-        alertBox.innerHTML = `⚠️ 超出 Word 標準邊界範圍：${reasons.join('；')}！`;
+        if (isHeightOverflow) reasons.push(`高度超出標準邊界 (請設換欄斷點或縮小箭頭/高度)`);
+        if (isWidthOverflow) reasons.push(`寬度超出標準邊界 (請將圖塊寬度調小)`);
+        alertBox.innerHTML = `⚠️ 超出 Word 標準邊界：${reasons.join('；')}！`;
       } else {
+        // 需求 3：改為簡潔的「✅符合 Word 標準邊界（上下 2.54cm、左右 3.18cm）」
         alertBox.style.background = '#dcfce7';
         alertBox.style.border = '1.5px solid #86efac';
         alertBox.style.color = '#166534';
-        alertBox.innerHTML = `✅ 完全符合 Word 標準邊界（上下 2.54cm、左右 3.18cm）：目前圖表寬 ${geo.maxUsedX}pt / ${SAFE_BOX_W_PT}pt、高 ${geo.totalHeight}pt / ${SAFE_BOX_H_PT}pt，貼入 Word 絕不跑版跨頁！`;
+        alertBox.innerHTML = `✅符合 Word 標準邊界（上下 2.54cm、左右 3.18cm）`;
       }
     }
 
@@ -2436,6 +2462,7 @@
       `;
     }
 
+    // 需求 3：移除「安全框」字眼，改為「📐 Word 標準邊界 (寬 14.64cm × 高 24.62cm)」
     svg.innerHTML = `
       <defs>
         <marker id="arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
@@ -2448,9 +2475,9 @@
       <text x="${A4_PAGE_W_PT - 45}" y="${MARGIN_TOP_PT + SAFE_BOX_H_PT / 2}" font-size="9" font-weight="bold" fill="#94a3b8" text-anchor="middle">右 3.18cm ▶</text>
 
       <rect x="${MARGIN_LEFT_PT}" y="${MARGIN_TOP_PT}" width="${SAFE_BOX_W_PT}" height="${SAFE_BOX_H_PT}"
-            fill="none" stroke="#dc2626" stroke-width="1.4" stroke-dasharray="6,4" />
-      <rect x="${MARGIN_LEFT_PT}" y="${MARGIN_TOP_PT - 16}" width="265" height="15" rx="3" fill="#fef2f2" stroke="#fca5a5" />
-      <text x="${MARGIN_LEFT_PT + 6}" y="${MARGIN_TOP_PT - 5}" font-size="9" font-weight="bold" fill="#dc2626">📐 Word 標準邊界安全框 (寬 14.64cm × 高 24.62cm)</text>
+            fill="none" stroke="#eab308" stroke-width="1.5" stroke-dasharray="6,4" />
+      <rect x="${MARGIN_LEFT_PT}" y="${MARGIN_TOP_PT - 16}" width="245" height="15" rx="3" fill="#fef9c3" stroke="#eab308" />
+      <text x="${MARGIN_LEFT_PT + 6}" y="${MARGIN_TOP_PT - 5}" font-size="9" font-weight="bold" fill="#854d0e">📐 Word 標準邊界 (寬 14.64cm × 高 24.62cm)</text>
 
       <g transform="translate(${MARGIN_LEFT_PT}, ${MARGIN_TOP_PT})">
         ${innerContent}
@@ -2615,7 +2642,7 @@
     `;
   }
 
-  // ==================== 智慧貼上 Word 標準表 ====================
+  // ==================== 需求 5：智慧貼上 Word 標準表（貼入後自動清空 3 大表單標題並觸發黃色防呆，但保留安衛表單庫） ====================
   function openPasteModal() {
     document.getElementById('pasteModal').style.display = 'flex';
     const area = document.getElementById('pasteEditableArea');
@@ -2670,7 +2697,6 @@
     }
 
     const newAppData = [];
-    const mainRec = document.getElementById('chkFormTitleInput').value.trim() || '施工抽查紀錄表';
 
     dataRows.forEach((cols, idx) => {
       let phaseStr = '', flowStr = '', mgmtStr = '', stdStr = '', timingStr = '', methodStr = '目視', freqStr = '每次', actionStr = '改正', recStr = '', noteStr = '';
@@ -2763,7 +2789,7 @@
 
       let useMain = false;
       let customRec = recStr;
-      if (!recStr || recStr.includes('抽查') || recStr === mainRec) {
+      if (!recStr || recStr.includes('抽查')) {
         useMain = true;
         customRec = '';
       }
@@ -2783,9 +2809,15 @@
     if (newAppData.length > 0) {
       appData = newAppData;
       splitTaskId = null;
+
+      // 需求 5：貼入智慧辨識後，自動清空右上角 3 個表單標題（並觸發黃框防呆提醒修改），但完整保留右下角安衛表單索引庫！
+      document.getElementById('stdTitleInput').value = '';
+      document.getElementById('chkFormTitleInput').value = '';
+      document.getElementById('flowTitleInput').value = '';
+
       closePasteModal();
       refreshAllViews(true);
-      showToast(`🎉 成功匯入 ${newAppData.length} 個工項！已自動暫存並將 ★ 歸位至管理項目、※ 歸位至施工工項！`);
+      showToast(`🎉 成功匯入 ${newAppData.length} 個工項！已自動清空右上角 3 個表單標題，請記得填入新表單編號與名稱！`);
     } else {
       showToast('無法辨識表格欄位，請確認貼上的是標準表格式。', true);
     }
@@ -2828,7 +2860,7 @@
         <style>
           @page Section1 { size: ${pageSize}; margin: ${margin}; }
           div.Section1 { page: Section1; }
-          body, table, td, th, p { font-family: "標楷體", "DFKai-SB", serif; }
+          body, table, td, th, p { font-family: "標楷體", "DFKai-SB", serif; font-size: 12pt; line-height: 1.0; }
           table { border-collapse: collapse; }
         </style>
       </head>
@@ -2877,13 +2909,15 @@
     writeHtmlToClipboard(html, sorted.map(d => d.text).join(' -> '), '📋 已複製「施工流程圖」原生圖形！請至 Word 按 Ctrl+V 貼上');
   }
   function downloadFlowDoc() {
+    const errs = validateAllData();
+    if (errs.length > 0 && !confirm(`目前尚有 ${errs.length} 項防呆提醒未修正，確定仍要下載嗎？`)) return;
     const title = document.getElementById('flowTitleInput').value.trim() || '標準施工流程圖';
     triggerDocDownload(buildWordVmlHtml(), `${title}-施工流程圖.doc`);
   }
 
   function downloadAllThreeDocs() {
     const errs = validateAllData();
-    if (errs.length > 0 && !confirm(`系統偵測到 ${errs.length} 項防呆異常，確定仍要打包匯出三階表單嗎？`)) return;
+    if (errs.length > 0 && !confirm(`系統偵測到 ${errs.length} 項防呆提醒（黃框處），確定仍要打包匯出三階表單嗎？`)) return;
     const baseName = document.getElementById('flowTitleInput').value.trim() || '工程三階表單';
     const flowVmlBody = buildWordVmlHtml().replace(/^[\s\S]*?<div class="Section1">/i, '').replace(/<\/div>\s*<\/body>[\s\S]*$/i, '');
 
@@ -2905,7 +2939,7 @@
           div.SectionStd { page: SectionStd; }
           @page SectionChk { size: 21.0cm 29.7cm; margin: 1.5cm 1.8cm 1.5cm 1.8cm; }
           div.SectionChk { page: SectionChk; }
-          body, table, td, th, p { font-family: "標楷體", "DFKai-SB", serif; }
+          body, table, td, th, p { font-family: "標楷體", "DFKai-SB", serif; font-size: 12pt; line-height: 1.0; }
           table { border-collapse: collapse; }
         </style>
       </head>
@@ -2926,10 +2960,10 @@
   function showToast(msg, isError = false) {
     const t = document.getElementById('toastBox');
     t.textContent = msg;
-    t.style.backgroundColor = isError ? '#b91c1c' : '#0f172a';
+    t.style.backgroundColor = isError ? '#b45309' : '#0f172a';
     t.style.display = 'block';
     clearTimeout(window._toastTimer);
-    window._toastTimer = setTimeout(() => { t.style.display = 'none'; }, 4000);
+    window._toastTimer = setTimeout(() => { t.style.display = 'none'; }, 4500);
   }
 
   function escapeHtml(str) {
