@@ -1,0 +1,2942 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>工程三階表單半自動生成系統 V5 (含自動暫存與專案存取)</title>
+  <style>
+    * { box-sizing: border-box; font-family: "Microsoft JhengHei", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { margin: 0; padding: 0; background-color: #e2e8f0; color: #0f172a; font-size: 14px; }
+
+    /* 頂部 Chrome 風格頁籤列 */
+    .chrome-header { background: #cbd5e1; padding: 8px 16px 0 16px; display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid #94a3b8; position: sticky; top: 0; z-index: 300; min-height: 48px; flex-wrap: wrap; gap: 8px; }
+    .tabs-bar { display: flex; gap: 6px; }
+    .chrome-tab { padding: 9px 18px; background: #e2e8f0; border: 1px solid #94a3b8; border-bottom: none; border-radius: 10px 10px 0 0; font-weight: 700; font-size: 0.94rem; color: #475569; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.15s; user-select: none; }
+    .chrome-tab:hover { background: #f1f5f9; color: #0f172a; }
+    .chrome-tab.active { background: #f8fafc; color: #1e40af; border-top: 3px solid #2563eb; padding-top: 7px; box-shadow: 0 -2px 6px rgba(0,0,0,0.05); }
+    .tab-badge { font-size: 0.75rem; padding: 2px 7px; border-radius: 99px; font-weight: 700; }
+    .badge-ok { background: #dcfce7; color: #166534; }
+    .badge-err { background: #fee2e2; color: #dc2626; }
+
+    .header-right-actions { padding-bottom: 6px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .autosave-indicator { font-size: 0.78rem; font-weight: 700; color: #065f46; background: #d1fae5; border: 1px solid #6ee7b7; padding: 4px 9px; border-radius: 99px; display: inline-flex; align-items: center; gap: 4px; margin-right: 4px; }
+
+    /* 主工作區 */
+    .main-workspace { background: #f8fafc; min-height: calc(100vh - 48px); padding: 16px 20px 60px 20px; }
+    .tab-pane { display: none; max-width: 1860px; margin: 0 auto; }
+    .tab-pane.active { display: block; }
+
+    /* 頁籤 1：左大右小配置 */
+    .tab1-layout { display: grid; grid-template-columns: 1fr 350px; gap: 18px; align-items: start; }
+    .right-sidebar { position: sticky; top: 60px; display: flex; flex-direction: column; gap: 16px; }
+
+    .card { background: #ffffff; border-radius: 10px; border: 1.5px solid #cbd5e1; box-shadow: 0 2px 5px rgba(0,0,0,0.04); padding: 16px 18px; margin-bottom: 18px; }
+    .card-blue { border: 2px solid #0284c7; margin-bottom: 0; }
+    .card-green { border: 2px solid #16a34a; margin-bottom: 0; }
+    .card-red { border: 2px solid #dc2626; }
+
+    /* 頁籤 2 & 頁籤 3 釘住頂部控制面板 */
+    .sticky-control-card { position: sticky; top: 48px; z-index: 250; background: rgba(255,255,255,0.97); backdrop-filter: blur(4px); border-bottom: 2px solid #94a3b8; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 18px; }
+
+    .card-title { font-size: 1rem; font-weight: 700; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 2px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+    /* 按鈕樣式 */
+    .btn { padding: 6px 11px; border-radius: 6px; font-size: 0.83rem; font-weight: 700; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s; white-space: nowrap; }
+    .btn-xs { padding: 3px 7px; font-size: 0.76rem; border-radius: 4px; font-weight: 700; cursor: pointer; }
+    .btn-outline { background: #fff; border: 1.5px solid #cbd5e1; color: #334155; }
+    .btn-outline:hover { background: #f1f5f9; border-color: #94a3b8; }
+    .btn-primary { background: #2563eb; color: #fff; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-success { background: #059669; color: #fff; }
+    .btn-success:hover { background: #047857; }
+    .btn-purple { background: #4f46e5; color: #fff; }
+    .btn-purple:hover { background: #4338ca; }
+    .btn-teal { background: #0d9488; color: #fff; }
+    .btn-teal:hover { background: #0f766e; }
+    .btn-amber { background: #d97706; color: #fff; }
+    .btn-amber:hover { background: #b45309; }
+    .btn-danger-ghost { background: #fff; border: 1px solid #fca5a5; color: #dc2626; padding: 2px 6px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.75rem; }
+    .btn-danger-ghost:hover { background: #fee2e2; }
+
+    /* 表單輸入控制項 */
+    .form-field { margin-bottom: 10px; }
+    .form-field label { display: block; font-size: 0.82rem; font-weight: 700; color: #334155; margin-bottom: 4px; }
+    input[type="text"], textarea, select { width: 100%; padding: 6px 8px; border: 1.5px solid #cbd5e1; border-radius: 5px; font-size: 0.88rem; outline: none; transition: border-color 0.2s; background: #fff; font-family: inherit; }
+    input[type="text"]:focus, textarea:focus, select:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.12); }
+    input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: #2563eb; vertical-align: middle; }
+
+    /* 符號快捷列 */
+    .symbol-toolbar { position: sticky; top: 48px; z-index: 240; background: #1e293b; color: #fff; padding: 7px 14px; border-radius: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; box-shadow: 0 3px 8px rgba(0,0,0,0.12); }
+    .sym-group { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+    .sym-btn { background: #334155; color: #f8fafc; border: 1px solid #475569; border-radius: 4px; padding: 3px 9px; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+    .sym-btn:hover { background: #2563eb; border-color: #60a5fa; }
+
+    /* 防呆警示列 */
+    .validation-banner { padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; font-weight: 700; font-size: 0.86rem; }
+    .val-ok { background: #dcfce7; border: 1.5px solid #86efac; color: #166534; }
+    .val-err { background: #fef2f2; border: 1.5px solid #fca5a5; color: #991b1b; }
+
+    /* ==================== 所見即所得編輯大表格 ==================== */
+    .wysiwyg-table-wrap { overflow-x: auto; border: 2px solid #000; background: #fff; }
+    table.wysiwyg-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    table.wysiwyg-table th { background: #e2e8f0; color: #000; font-weight: 700; font-size: 0.88rem; border: 1px solid #000; padding: 7px 4px; text-align: center; }
+    table.wysiwyg-table td { border: 1px solid #000; padding: 5px 5px; vertical-align: top; background: #fff; word-wrap: break-word; overflow-wrap: break-word; }
+
+    td.phase-cell-pre { background-color: #dbeafe !important; color: #1e3a8a; font-weight: 700; text-align: center; vertical-align: middle !important; }
+    td.phase-cell-mid { background-color: #fef3c7 !important; color: #78350f; font-weight: 700; text-align: center; vertical-align: middle !important; }
+    td.phase-cell-post { background-color: #dcfce7 !important; color: #14532d; font-weight: 700; text-align: center; vertical-align: middle !important; }
+
+    tr.row-phase-pre td.flow-cell { background-color: #f0f7ff; }
+    tr.row-phase-mid td.flow-cell { background-color: #fffbeb; }
+    tr.row-phase-post td.flow-cell { background-color: #f0fdf4; }
+
+    .cell-input { width: 100%; border: 1px solid #cbd5e1 !important; background: #fff !important; padding: 4px 6px !important; font-size: 0.86rem !important; border-radius: 4px !important; color: #000; line-height: 1.35; resize: vertical; white-space: pre-wrap; word-break: break-word; }
+    .cell-input:focus { border-color: #2563eb !important; box-shadow: 0 0 0 2px rgba(37,99,235,0.15) !important; }
+
+    /* 拖曳手把與高亮線 */
+    .drag-handle { cursor: grab; color: #475569; font-size: 0.82rem; user-select: none; padding: 2px 5px; border-radius: 4px; display: inline-block; font-weight: bold; background: #e2e8f0; border: 1px solid #94a3b8; }
+    .drag-handle:hover { color: #0f172a; background: #cbd5e1; }
+    .drag-handle:active { cursor: grabbing; }
+    .drag-over-top { border-top: 4px solid #2563eb !important; }
+    .drag-over-bottom { border-bottom: 4px solid #2563eb !important; }
+    .drag-over-box { outline: 3px dashed #2563eb !important; outline-offset: -3px; background-color: #eff6ff !important; }
+
+    /* 安衛複選清單樣式 */
+    .safety-multi-box { margin-top: 5px; padding: 5px 6px; background: #fff5f5; border: 1px solid #fca5a5; border-radius: 5px; text-align: left; font-size: 0.76rem; }
+    .safety-multi-item { display: flex; align-items: flex-start; gap: 4px; margin-bottom: 3px; cursor: pointer; color: #7f1d1d; font-weight: 600; line-height: 1.25; word-break: break-all; }
+    .safety-multi-item input { width: 14px; height: 14px; margin-top: 1px; accent-color: #dc2626; flex-shrink: 0; }
+
+    /* 極簡化管理紀錄欄樣式 */
+    .rec-compact-box { display: flex; flex-direction: column; gap: 4px; text-align: left; }
+    .rec-compact-top { display: flex; align-items: center; justify-content: space-between; gap: 4px; flex-wrap: wrap; }
+    .rec-badge-safety { display: inline-block; background: #fef2f2; border: 1px solid #fca5a5; color: #dc2626; padding: 1px 6px; border-radius: 4px; font-size: 0.74rem; font-weight: 700; cursor: help; }
+    .rec-chk-simple { display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; font-weight: 700; color: #1e40af; cursor: pointer; background: #eff6ff; padding: 2px 6px; border-radius: 4px; border: 1px solid #bfdbfe; }
+    .rec-chk-simple input { width: 14px; height: 14px; margin: 0; }
+
+    /* 錯誤紅框樣式 */
+    .input-error { border: 1.5px solid #dc2626 !important; background-color: #fef2f2 !important; }
+    .err-msg { color: #dc2626; font-size: 0.74rem; font-weight: 700; display: block; margin-top: 2px; }
+
+    /* 右側安衛表單管理區 */
+    .safety-list { max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+    .safety-item { display: flex; align-items: center; gap: 5px; background: #fff5f5; padding: 4px 6px; border-radius: 6px; border: 1px solid #fca5a5; }
+    .safety-item input[type="text"] { font-size: 0.82rem; font-weight: 700; color: #991b1b; padding: 4px 6px; border: 1px solid #fecaca; background: #fff; }
+
+    /* A4 預覽紙張 */
+    .paper-preview-wrapper { background: #cbd5e1; padding: 20px; border-radius: 8px; overflow-x: auto; display: flex; justify-content: center; }
+    .paper-a4-portrait { background: #fff; width: 794px; min-height: 1123px; padding: 34px 40px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); color: #000; position: relative; }
+    .paper-a4-landscape { background: #fff; width: 1080px; min-height: 720px; padding: 28px 30px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); color: #000; overflow: hidden; }
+    .word-doc-area, .word-doc-area * { font-family: "標楷體", "DFKai-SB", "BiauKai", serif; color: #000; }
+    .word-table { width: 100%; border-collapse: collapse; border: 1.5pt solid #000; font-size: 10.5pt; line-height: 1.35; table-layout: fixed; }
+    .word-table th, .word-table td { border: 0.75pt solid #000; padding: 4px 5px; vertical-align: middle; word-wrap: break-word; overflow-wrap: break-word; }
+
+    /* 頁籤 3 流程圖微調列 */
+    .adjust-toolbar { display: flex; flex-wrap: wrap; gap: 12px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 9px 14px; align-items: center; }
+    .stepper-item { display: flex; align-items: center; background: #fff; border: 1.5px solid #cbd5e1; border-radius: 6px; padding: 3px 8px; gap: 6px; }
+    .stepper-label { font-size: 0.84rem; font-weight: 700; color: #475569; }
+    .btn-step { width: 24px; height: 24px; border: 1px solid #cbd5e1; background: #f8fafc; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    .step-value { font-size: 0.85rem; font-weight: 700; min-width: 36px; text-align: center; }
+
+    /* 彈窗 */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.55); display: none; justify-content: center; align-items: center; z-index: 1000; }
+    .modal-box { background: #fff; border-radius: 10px; width: 740px; max-width: 95%; padding: 22px 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.25); }
+    .modal-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 8px; }
+    .paste-editable { width: 100%; height: 220px; padding: 12px; border: 2px dashed #94a3b8; border-radius: 8px; font-size: 0.9rem; overflow-y: auto; margin-bottom: 14px; background: #f8fafc; outline: none; }
+
+    .toast-fixed { position: fixed; bottom: 20px; right: 24px; background: #0f172a; color: #fff; padding: 12px 20px; border-radius: 8px; font-weight: 700; font-size: 0.92rem; box-shadow: 0 8px 20px rgba(0,0,0,0.25); display: none; z-index: 2000; }
+  </style>
+</head>
+<body>
+
+<!-- 頂部 Chrome 風格頁籤列 + 自動暫存狀態 + JSON 專案匯出入 -->
+<div class="chrome-header">
+  <div class="tabs-bar">
+    <div class="chrome-tab active" onclick="switchTab(1)" id="tabBtn1">
+      <span>📋 1. 抽查標準表</span>
+      <span id="navBadge" class="tab-badge badge-ok">✓ 檢核通過</span>
+    </div>
+    <div class="chrome-tab" onclick="switchTab(2)" id="tabBtn2">
+      <span>📝 2. 施工抽查表單</span>
+    </div>
+    <div class="chrome-tab" onclick="switchTab(3)" id="tabBtn3">
+      <span>📐 3. 施工流程圖</span>
+    </div>
+  </div>
+  <div class="header-right-actions">
+    <span id="autosaveStatus" class="autosave-indicator" title="所有變更皆會自動儲存於瀏覽器中，重新整理不會遺失">💾 已自動暫存</span>
+    <button class="btn btn-teal" onclick="exportProjectJson()" title="將目前三階表單存成 .json 專案檔備份">📤 匯出專案檔 (.json)</button>
+    <button class="btn btn-outline" onclick="triggerImportJson()" title="載入先前儲存的 .json 專案檔">📥 匯入專案檔</button>
+    <input type="file" id="importJsonInput" accept=".json" style="display:none;" onchange="handleImportJsonFile(event)">
+    <button class="btn btn-purple" onclick="openPasteModal()">📋 智慧貼上 Word 標準表</button>
+    <button class="btn btn-outline" onclick="confirmResetSample()">重置預設範例</button>
+    <button class="btn btn-amber" onclick="downloadAllThreeDocs()">📦 一鍵打包下載三階表單 (.doc)</button>
+  </div>
+</div>
+
+<div class="main-workspace">
+
+  <!-- ==================== 頁籤 1：抽查標準表 ==================== -->
+  <div class="tab-pane active" id="tabPane1">
+    <div class="tab1-layout">
+
+      <!-- 左側：主要編輯區 + 下方 Word 預覽區 -->
+      <div style="min-width:0;">
+        <div class="card card-red">
+          <div class="card-title">
+            <div>
+              <span style="font-size:1.06rem; color:#1e293b;">📋 施工抽查標準表（直接於表格內填寫，按住 <b style="color:#2563eb;">☰</b> 可跨階段或頭尾拖曳排序）</span>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-primary" onclick="copyStandardTableToClipboard()">📋 複製標準表 (貼上 Word)</button>
+              <button class="btn btn-success" onclick="downloadStandardDoc()">💾 下載標準表 (.doc)</button>
+            </div>
+          </div>
+
+          <!-- 符號快捷工具列 -->
+          <div class="symbol-toolbar">
+            <div class="sym-group">
+              <span style="font-size:0.82rem; font-weight:700; color:#94a3b8;">⚡ 插入符號：</span>
+              <button type="button" class="sym-btn" onmousedown="insertSymbol(event, '□')">□</button>
+              <button type="button" class="sym-btn" onmousedown="insertSymbol(event, '☑')">☑</button>
+              <button type="button" class="sym-btn" onmousedown="insertSymbol(event, '≧')">≧</button>
+              <button type="button" class="sym-btn" onmousedown="insertSymbol(event, '≦')">≦</button>
+              <button type="button" class="sym-btn" onmousedown="insertSymbol(event, '±')">±</button>
+              <button type="button" class="sym-btn" onmousedown="insertSymbol(event, '°')">°</button>
+              <button type="button" class="sym-btn" onmousedown="insertSymbol(event, 'cm²')">cm²</button>
+              <button type="button" class="sym-btn" onmousedown="insertSymbol(event, 'cm³')">cm³</button>
+              <button type="button" class="sym-btn" onmousedown="insertSymbol(event, 'kgf/cm²')">kgf/cm²</button>
+              <button type="button" class="sym-btn" onmousedown="insertSymbol(event, '%')">%</button>
+            </div>
+            <div style="font-size:0.8rem; color:#cbd5e1;">
+              💡 <b style="color:#60a5fa;">★ 檢驗停留點</b> 勾選於「管理項目(A)」，<b style="color:#f87171;">※ 安衛查驗點</b> 勾選於「施工工項」
+            </div>
+          </div>
+
+          <div id="validationBanner" class="validation-banner val-ok"></div>
+
+          <div id="editorTableHeading" style="text-align:center; font-family:'標楷體','DFKai-SB',serif; font-size:1.35rem; font-weight:bold; margin:8px 0;"></div>
+
+          <div class="wysiwyg-table-wrap">
+            <table class="wysiwyg-table">
+              <thead>
+                <tr>
+                  <th style="width:56px;">階段</th>
+                  <th style="width:175px;">施工工項 (流程)<br><small style="color:#dc2626;">(勾選 ※ 安衛點可複選)</small></th>
+                  <th style="width:170px;">管理項目 (A)<br><small style="color:#0033CC;">(勾選 ★ 檢驗停留點)</small></th>
+                  <th style="width:230px;">抽查標準 (B)<br><small style="color:#475569;">(定量 / 定性標準)</small></th>
+                  <th style="width:50px;">抽查<br>時機</th>
+                  <th style="width:85px;">抽查方法</th>
+                  <th style="width:85px;">抽查頻率<br><small style="color:#dc2626;">(★禁填不定期)</small></th>
+                  <th style="width:82px;">不符合之<br>處置方法</th>
+                  <th style="width:165px;">管理紀錄<br><small style="color:#475569;">(勾選本表 / 填其他表)</small></th>
+                  <th style="width:68px;">備註</th>
+                  <th style="width:42px;">刪列</th>
+                </tr>
+              </thead>
+              <tbody id="wysiwygTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 抽查標準表 Word 即時預覽 -->
+        <div class="card">
+          <div class="card-title">
+            <span>👁️ 抽查標準表 Word 輸出排版即時預覽（已自動合併相同管理紀錄，並印出勾選之安衛表單名稱）</span>
+          </div>
+          <div class="paper-preview-wrapper">
+            <div class="paper-a4-landscape word-doc-area" id="standardPreviewPaper"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右側欄：共用基本索引 + 安衛表單庫 -->
+      <div class="right-sidebar">
+        <div class="card card-blue">
+          <div class="card-title" style="color:#0369a1;">
+            <span>📌 共用基本索引設定</span>
+          </div>
+          <div class="form-field">
+            <label>1. 抽查標準表標題 (頁籤 1)：</label>
+            <input type="text" id="stdTitleInput" value="表 02448 隧道防水膜施工抽查標準" oninput="syncGlobalConfig()">
+          </div>
+          <div class="form-field">
+            <label style="color:#0033CC;">2. 施工抽查表編號與名稱 (頁籤 2 & 管理紀錄 & 流程圖)：</label>
+            <input type="text" id="chkFormTitleInput" value="表 02448 隧道防水層施工抽查紀錄表" oninput="syncGlobalConfig()">
+          </div>
+          <div class="form-field" style="margin-bottom:4px;">
+            <label style="color:#1e40af;">3. 施工流程圖表頭編號與名稱 (頁籤 3 頂部)：</label>
+            <input type="text" id="flowTitleInput" value="02448 隧道防水層施工" oninput="syncGlobalConfig()">
+          </div>
+        </div>
+
+        <div class="card card-green">
+          <div class="card-title" style="color:#15803d;">
+            <span><b style="color:#CC0000;">※</b> 安衛表單索引庫 (可直接改名)</span>
+          </div>
+          <p style="font-size:0.78rem; color:#475569; margin-top:0; margin-bottom:8px;">
+            可直接點擊下方文字框修改安衛表編號與名稱，全站已勾選的工項會自動同步更新：
+          </p>
+          <div class="safety-list" id="safetyFormsListContainer"></div>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <input type="text" id="newSafetyFormInput" placeholder="輸入新增安衛表編號+名稱">
+            <button class="btn btn-success" style="justify-content:center;" onclick="addSafetyForm()">＋ 新增安衛表單</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==================== 頁籤 2：施工抽查表單 ==================== -->
+  <div class="tab-pane" id="tabPane2">
+    <div class="card sticky-control-card">
+      <div class="card-title">
+        <span>🛠️ 施工抽查表「表頭與附加區塊」自訂設定</span>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-primary" onclick="copyChecklistToClipboard()">📋 複製原生表格 (貼上 Word)</button>
+          <button class="btn btn-success" onclick="downloadChecklistDoc()">💾 下載施工抽查表 (.doc)</button>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap:10px; margin-bottom:10px;">
+        <div class="form-field" style="margin:0;">
+          <label>頂部監造計畫 / 機關抬頭：</label>
+          <input type="text" id="chkPlanHeader" value="台灣世曦工程顧問股份有限公司" oninput="onChecklistHeaderInput()">
+        </div>
+        <div class="form-field" style="margin:0;">
+          <label>右上角品質文件編號：</label>
+          <input type="text" id="chkDocCode" value="" placeholder="選填 (如 QP-11103B-05-01)" oninput="onChecklistHeaderInput()">
+        </div>
+        <div class="form-field" style="margin:0;">
+          <label>工程名稱：</label>
+          <input type="text" id="chkProjectName" value="" placeholder="可留空或預填工程名稱" oninput="onChecklistHeaderInput()">
+        </div>
+        <div class="form-field" style="margin:0;">
+          <label>分項工程名稱：</label>
+          <input type="text" id="chkSubProject" value="" placeholder="可留空供現場填寫" oninput="onChecklistHeaderInput()">
+        </div>
+        <div class="form-field" style="margin:0;">
+          <label>施工作業應提出證明文件記錄：</label>
+          <input type="text" id="chkProofDocText" value="施工圖" oninput="onChecklistHeaderInput()">
+        </div>
+        <div class="form-field" style="margin:0;">
+          <label>編號欄標題：</label>
+          <input type="text" id="chkSerialLabel" value="編 號" oninput="onChecklistHeaderInput()">
+        </div>
+      </div>
+
+      <div style="display:flex; gap:20px; flex-wrap:wrap; background:#f8fafc; padding:7px 12px; border-radius:6px; border:1px solid #e2e8f0; font-weight:700; font-size:0.85rem;">
+        <label style="cursor:pointer; display:flex; align-items:center; gap:6px;">
+          <input type="checkbox" id="chkShowProofRow" onchange="onChecklistHeaderInput()">
+          <span>顯示「施工作業應提出證明文件記錄 (□齊全 □不齊全)」列</span>
+        </label>
+        <label style="cursor:pointer; display:flex; align-items:center; gap:6px;">
+          <input type="checkbox" id="chkShowSafetyBottom" checked onchange="onChecklistHeaderInput()">
+          <span>顯示底部「※安全衛生查驗點」查核列</span>
+        </label>
+        <label style="cursor:pointer; display:flex; align-items:center; gap:6px;">
+          <input type="checkbox" id="chkShowDefectBottom" checked onchange="onChecklistHeaderInput()">
+          <span>顯示底部「缺失複查結果、備註說明 & 底部監造簽名欄」</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="paper-preview-wrapper">
+      <div class="paper-a4-portrait word-doc-area" id="checklistPreviewPaper"></div>
+    </div>
+  </div>
+
+  <!-- ==================== 頁籤 3：施工流程圖 ==================== -->
+  <div class="tab-pane" id="tabPane3">
+    <div class="card sticky-control-card">
+      <div class="card-title">
+        <span>📐 施工流程圖</span>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-primary" onclick="copyFlowVmlToClipboard()">📋 複製原生圖形 (貼上 Word)</button>
+          <button class="btn btn-success" onclick="downloadFlowDoc()">💾 下載施工流程圖 (.doc)</button>
+        </div>
+      </div>
+
+      <div class="adjust-toolbar">
+        <div class="stepper-item">
+          <span class="stepper-label">圖塊寬度</span>
+          <button class="btn-step" onclick="adjustFlowParam('width', -10)">－</button>
+          <span class="step-value" id="valWidth">136pt</span>
+          <button class="btn-step" onclick="adjustFlowParam('width', 10)">＋</button>
+        </div>
+        <div class="stepper-item">
+          <span class="stepper-label">圖塊高度</span>
+          <button class="btn-step" onclick="adjustFlowParam('height', -2)">－</button>
+          <span class="step-value" id="valHeight">36pt</span>
+          <button class="btn-step" onclick="adjustFlowParam('height', 2)">＋</button>
+        </div>
+        <div class="stepper-item">
+          <span class="stepper-label">字體大小</span>
+          <button class="btn-step" onclick="adjustFlowParam('font', -1)">－</button>
+          <span class="step-value" id="valFont">10pt</span>
+          <button class="btn-step" onclick="adjustFlowParam('font', 1)">＋</button>
+        </div>
+        <div class="stepper-item">
+          <span class="stepper-label">箭頭長度</span>
+          <button class="btn-step" onclick="adjustFlowParam('gap', -2)">－</button>
+          <span class="step-value" id="valGap">24pt</span>
+          <button class="btn-step" onclick="adjustFlowParam('gap', 2)">＋</button>
+        </div>
+
+        <div class="stepper-item" style="padding:4px 10px;">
+          <span class="stepper-label">施工中換欄斷點：</span>
+          <select id="flowBreakSelect" style="width:auto; padding:3px 8px; font-size:0.85rem;" onchange="changeFlowBreak(this.value)">
+            <option value="">單欄直式 (不換欄)</option>
+          </select>
+        </div>
+
+        <label style="cursor:pointer; display:flex; align-items:center; gap:6px; font-weight:700; font-size:0.86rem;">
+          <input type="checkbox" id="enablePhasesCheckbox" checked onchange="toggleFlowPhases(this.checked)">
+          <span>顯示階段虛線 (前/中/後)</span>
+        </label>
+        <label style="cursor:pointer; display:flex; align-items:center; gap:6px; font-weight:700; font-size:0.86rem;">
+          <input type="checkbox" id="enableLegendCheckbox" checked onchange="toggleFlowLegend(this.checked)">
+          <span>顯示底部 14cm 備註說明</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="paper-preview-wrapper">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div id="flowPageStatusAlert" style="width:794px; margin-bottom:10px; padding:8px 14px; border-radius:6px; font-size:0.86rem; font-weight:700; text-align:center;"></div>
+        <div style="background:#fff; width:794px; box-shadow:0 6px 20px rgba(0,0,0,0.18); position:relative;">
+          <svg id="svgPreview" width="794" viewBox="0 0 595 842" style="display:block; width:794px; height:auto;"></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 智慧貼上 Word 標準表彈窗 -->
+<div class="modal-overlay" id="pasteModal">
+  <div class="modal-box">
+    <div class="modal-title">📋 智慧貼上 Word「抽查標準表」自動解析匯入</div>
+    <p style="font-size:0.86rem; color:#475569; margin-top:0; line-height:1.5;">
+      請在 Word 選取整張「抽查標準表」按 <code>Ctrl+C</code>，點擊下方虛線框按 <code>Ctrl+V</code> 貼上。<br>
+      ✨ <b>智慧歸位引擎</b>：不論原本表格的 <b style="color:#0033CC;">★</b> 在哪一欄，系統都會統一歸位至<b>「管理項目(A)」</b>；所有 <b style="color:#CC0000;">※</b> 則自動歸位至<b>「施工工項」</b>！
+    </p>
+    <div id="pasteEditableArea" class="paste-editable" contenteditable="true"></div>
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-size:0.8rem; color:#64748b;">匯入後可直接於左側表格內微調或拖曳順序</span>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-outline" onclick="closePasteModal()">取消</button>
+        <button class="btn btn-primary" onclick="parsePastedWordTable()">🚀 解析並正規化匯入</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toastBox" class="toast-fixed"></div>
+
+<script>
+  // ==================== LocalStorage 金鑰與全域狀態 ====================
+  const STORAGE_KEY = 'THREE_TIER_FORM_SYSTEM_V5_STATE';
+
+  let safetyForms = [];
+  let appData = [];
+
+  // Word A4 標準邊界常數 (上下 2.54cm = 72pt、左右 3.18cm = 90pt；可印安全框 415pt × 698pt)
+  const A4_PAGE_W_PT = 595;
+  const A4_PAGE_H_PT = 842;
+  const MARGIN_LEFT_PT = 90;
+  const MARGIN_TOP_PT = 72;
+  const SAFE_BOX_W_PT = 415;
+  const SAFE_BOX_H_PT = 698;
+
+  let enablePhases = true;
+  let enableLegend = true;
+  let splitTaskId = null;
+  let nodeWidth = 136;
+  let nodeHeight = 36;
+  let fontSizePt = 10;
+  let verticalGap = 24;
+  const PASS_VERTICAL_GAP = 24;
+  const LEGEND_BOX_WIDTH = 397;
+  const START_END_HEIGHT = 40;
+  const CIRCLE_RADIUS = 9;
+  const HEADER_TITLE_OFFSET = 28;
+
+  let lastFocusedInput = null;
+  let dragState = { type: null, flowId: null, mgmtId: null };
+
+  window.onload = () => {
+    document.addEventListener('focusin', (e) => {
+      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') && e.target.type !== 'checkbox' && e.target.type !== 'file') {
+        lastFocusedInput = e.target;
+      }
+    });
+
+    // 優先嘗試從瀏覽器 LocalStorage 載入上次編輯狀態；若無才載入預設範例
+    const restored = loadStateFromLocalStorage();
+    if (!restored) {
+      loadSampleData(true);
+    } else {
+      showToast('📂 已自動恢復您上次編輯的表單進度！');
+    }
+  };
+
+  function renderPreservingScroll(renderFn) {
+    const winX = window.scrollX;
+    const winY = window.scrollY;
+    renderFn();
+    window.scrollTo(winX, winY);
+  }
+
+  // ==================== 自動暫存 (LocalStorage) & 專案 JSON 匯出匯入 ====================
+  function buildProjectStateObject() {
+    return {
+      version: '5.0',
+      savedAt: new Date().toISOString(),
+      globalConfig: {
+        stdTitle: document.getElementById('stdTitleInput').value,
+        chkFormTitle: document.getElementById('chkFormTitleInput').value,
+        flowTitle: document.getElementById('flowTitleInput').value
+      },
+      checklistHeader: {
+        planHeader: document.getElementById('chkPlanHeader').value,
+        docCode: document.getElementById('chkDocCode').value,
+        projectName: document.getElementById('chkProjectName').value,
+        subProject: document.getElementById('chkSubProject').value,
+        proofDocText: document.getElementById('chkProofDocText').value,
+        serialLabel: document.getElementById('chkSerialLabel').value,
+        showProofRow: document.getElementById('chkShowProofRow').checked,
+        showSafetyBottom: document.getElementById('chkShowSafetyBottom').checked,
+        showDefectBottom: document.getElementById('chkShowDefectBottom').checked
+      },
+      flowSettings: {
+        enablePhases,
+        enableLegend,
+        splitTaskId,
+        nodeWidth,
+        nodeHeight,
+        fontSizePt,
+        verticalGap
+      },
+      safetyForms,
+      appData
+    };
+  }
+
+  function applyProjectStateObject(state) {
+    if (!state || !Array.isArray(state.appData)) return false;
+
+    if (state.globalConfig) {
+      document.getElementById('stdTitleInput').value = state.globalConfig.stdTitle ?? '';
+      document.getElementById('chkFormTitleInput').value = state.globalConfig.chkFormTitle ?? '';
+      document.getElementById('flowTitleInput').value = state.globalConfig.flowTitle ?? '';
+    }
+    if (state.checklistHeader) {
+      document.getElementById('chkPlanHeader').value = state.checklistHeader.planHeader ?? '';
+      document.getElementById('chkDocCode').value = state.checklistHeader.docCode ?? '';
+      document.getElementById('chkProjectName').value = state.checklistHeader.projectName ?? '';
+      document.getElementById('chkSubProject').value = state.checklistHeader.subProject ?? '';
+      document.getElementById('chkProofDocText').value = state.checklistHeader.proofDocText ?? '';
+      document.getElementById('chkSerialLabel').value = state.checklistHeader.serialLabel ?? '編 號';
+      document.getElementById('chkShowProofRow').checked = !!state.checklistHeader.showProofRow;
+      document.getElementById('chkShowSafetyBottom').checked = state.checklistHeader.showSafetyBottom !== false;
+      document.getElementById('chkShowDefectBottom').checked = state.checklistHeader.showDefectBottom !== false;
+    }
+    if (state.flowSettings) {
+      enablePhases = state.flowSettings.enablePhases !== false;
+      enableLegend = state.flowSettings.enableLegend !== false;
+      splitTaskId = state.flowSettings.splitTaskId || null;
+      nodeWidth = Number(state.flowSettings.nodeWidth) || 136;
+      nodeHeight = Number(state.flowSettings.nodeHeight) || 36;
+      fontSizePt = Number(state.flowSettings.fontSizePt) || 10;
+      verticalGap = Number(state.flowSettings.verticalGap) || 24;
+
+      document.getElementById('enablePhasesCheckbox').checked = enablePhases;
+      document.getElementById('enableLegendCheckbox').checked = enableLegend;
+      document.getElementById('valWidth').textContent = nodeWidth + 'pt';
+      document.getElementById('valHeight').textContent = nodeHeight + 'pt';
+      document.getElementById('valFont').textContent = fontSizePt + 'pt';
+      document.getElementById('valGap').textContent = verticalGap + 'pt';
+    }
+
+    safetyForms = Array.isArray(state.safetyForms) ? state.safetyForms : [];
+    appData = state.appData;
+    refreshAllViews(false);
+    return true;
+  }
+
+  function saveStateToLocalStorage() {
+    try {
+      const state = buildProjectStateObject();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      const now = new Date();
+      const timeStr = now.toTimeString().split(' ')[0];
+      const ind = document.getElementById('autosaveStatus');
+      if (ind) ind.textContent = `💾 已自動暫存 (${timeStr})`;
+    } catch (e) {
+      console.warn('LocalStorage 儲存失敗:', e);
+    }
+  }
+
+  function loadStateFromLocalStorage() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return false;
+      const state = JSON.parse(raw);
+      return applyProjectStateObject(state);
+    } catch (e) {
+      console.warn('LocalStorage 讀取失敗:', e);
+      return false;
+    }
+  }
+
+  function exportProjectJson() {
+    const state = buildProjectStateObject();
+    const baseName = (document.getElementById('flowTitleInput').value.trim() || '三階表單專案').replace(/[\\/:*?"<>|]/g, '_');
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${baseName}_專案備份.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(`📤 已匯出專案備份檔：${baseName}_專案備份.json`);
+  }
+
+  function triggerImportJson() {
+    const inp = document.getElementById('importJsonInput');
+    inp.value = '';
+    inp.click();
+  }
+
+  function handleImportJsonFile(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const parsed = JSON.parse(evt.target.result);
+        if (applyProjectStateObject(parsed)) {
+          saveStateToLocalStorage();
+          showToast(`📥 成功匯入專案檔：${file.name}`);
+        } else {
+          showToast('專案檔格式不正確，無法載入！', true);
+        }
+      } catch (err) {
+        showToast('讀取 JSON 檔案失敗，請確認檔案是否損毀！', true);
+      }
+    };
+    reader.readAsText(file, 'utf-8');
+  }
+
+  function confirmResetSample() {
+    if (confirm('確定要重置為預設「02448 隧道防水層施工」範例嗎？\n（若目前有未匯出的重要編輯內容，建議先點「📤 匯出專案檔」備份）')) {
+      loadSampleData(false);
+    }
+  }
+
+  // ==================== 預設範例載入 ====================
+  function loadSampleData(silent = false) {
+    safetyForms = [
+      { id: 'sf1', name: '表 01523-W09 隧道防水層施工安全衛生抽查紀錄表' },
+      { id: 'sf2', name: '表 01523-W01 一般施工安全衛生現場抽查表' },
+      { id: 'sf3', name: '表 01523-W05 高風險作業安全衛生抽查紀錄表' },
+      { id: 'sf4', name: '表 01523-W08 局限空間作業安全衛生抽查紀錄表' }
+    ];
+
+    document.getElementById('stdTitleInput').value = '表 02448 隧道防水膜施工抽查標準';
+    document.getElementById('chkFormTitleInput').value = '表 02448 隧道防水層施工抽查紀錄表';
+    document.getElementById('flowTitleInput').value = '02448 隧道防水層施工';
+    document.getElementById('chkPlanHeader').value = '台灣世曦工程顧問股份有限公司';
+    document.getElementById('chkDocCode').value = '';
+    document.getElementById('chkProjectName').value = '';
+    document.getElementById('chkSubProject').value = '';
+    document.getElementById('chkProofDocText').value = '施工圖';
+    document.getElementById('chkSerialLabel').value = '編 號';
+    document.getElementById('chkShowProofRow').checked = false;
+    document.getElementById('chkShowSafetyBottom').checked = true;
+    document.getElementById('chkShowDefectBottom').checked = true;
+
+    appData = [
+      {
+        id: 'fl_1', phase: 'pre', flowName: '施工前準備工作', isSafetyPoint: true,
+        safetyFormIds: ['sf1'],
+        mgmtItems: [
+          {
+            id: 'mg_1', name: '證明文件', isStopPoint: false,
+            criteriaList: [
+              { id: 'cr_1', std: '施工計畫核定文號', method: '文件查閱', freq: '每次', action: '不得施工', useMainForm: false, customRecord: '核備文件', note: '' },
+              { id: 'cr_2', std: '施工圖核定文號', method: '文件查閱', freq: '每次', action: '不得施工', useMainForm: false, customRecord: '核備文件', note: '' }
+            ]
+          },
+          {
+            id: 'mg_2', name: '材料進場', isStopPoint: true,
+            criteriaList: [
+              { id: 'cr_3', std: '合格材料(非織物、防水膜)抽驗紀錄', method: '文件查閱', freq: '每批', action: '不得施工', useMainForm: false, customRecord: '材料/設備品質抽驗紀錄表', note: '' }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'fl_2', phase: 'mid', flowName: '防水膜作業', isSafetyPoint: true,
+        safetyFormIds: ['sf1'],
+        mgmtItems: [
+          {
+            id: 'mg_3', name: '尖銳物修整平順', isStopPoint: false,
+            criteriaList: [
+              { id: 'cr_4', std: '表面無鬆動物質、雜物或外露鐵件', method: '目視', freq: '不定期', action: '改正', useMainForm: true, customRecord: '', note: '' }
+            ]
+          },
+          {
+            id: 'mg_4', name: '非織布搭接', isStopPoint: false,
+            criteriaList: [
+              { id: 'cr_5', std: '搭接長度≧10cm', method: '捲尺', freq: '不定期', action: '改正', useMainForm: true, customRecord: '', note: '' },
+              { id: 'cr_6', std: '縱向接縫≦2 道/環', method: '目視', freq: '不定期', action: '改正', useMainForm: true, customRecord: '', note: '' }
+            ]
+          },
+          {
+            id: 'mg_5', name: '固定塊(熱熔墊片)間距、數量', isStopPoint: false,
+            criteriaList: [
+              { id: 'cr_7', std: '間距≦60cm，數量≧4 塊/m²', method: '捲尺', freq: '不定期', action: '改正', useMainForm: true, customRecord: '', note: '' }
+            ]
+          },
+          {
+            id: 'mg_6', name: '防水膜搭接', isStopPoint: true,
+            criteriaList: [
+              { id: 'cr_8', std: '以雙道熱溶接方式連接', method: '目視', freq: '每次', action: '改正', useMainForm: true, customRecord: '', note: '' },
+              { id: 'cr_9', std: '搭接長度≧8cm', method: '捲尺', freq: '每次', action: '改正', useMainForm: true, customRecord: '', note: '' },
+              { id: 'cr_10', std: '破裂修補處，其四周搭接長度≧15cm', method: '捲尺', freq: '每次', action: '改正', useMainForm: true, customRecord: '', note: '' }
+            ]
+          },
+          {
+            id: 'mg_7', name: '接縫抗拉強度取樣', isStopPoint: true,
+            criteriaList: [
+              { id: 'cr_11', std: '每 1,000m 取樣一組', method: '目視', freq: '每次', action: '改正', useMainForm: true, customRecord: '', note: '' }
+            ]
+          },
+          {
+            id: 'mg_8', name: '接縫密封檢驗', isStopPoint: true,
+            criteriaList: [
+              { id: 'cr_12', std: '□氣壓檢驗\n打入 1.0~2.0kgf/cm² 空氣壓力，維持 5 分鐘，壓力下降≦20%\n□真空罩檢驗\n以 0.2~0.5kgf/cm² 壓力抽出空氣，儀表指針不動，表示有破損', method: '空壓機/真空幫浦', freq: '每處', action: '改正', useMainForm: false, customRecord: '材料/設備品質抽驗紀錄表', note: '' }
+            ]
+          },
+          {
+            id: 'mg_9', name: '破損檢驗', isStopPoint: true,
+            criteriaList: [
+              { id: 'cr_13', std: '以 0.2~0.5kgf/cm² 壓力抽出空氣，儀表指針不動，表示有破損', method: '真空幫浦', freq: '每處', action: '改正', useMainForm: false, customRecord: '材料/設備品質抽驗紀錄表', note: '' }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'fl_3', phase: 'post', flowName: '清理及檢視', isSafetyPoint: true,
+        safetyFormIds: ['sf1'],
+        mgmtItems: [
+          {
+            id: 'mg_10', name: '場地整潔', isStopPoint: true,
+            criteriaList: [
+              { id: 'cr_14', std: '保持場地整潔，無雜物', method: '目視', freq: '每次', action: '改正', useMainForm: true, customRecord: '', note: '' }
+            ]
+          }
+        ]
+      }
+    ];
+
+    splitTaskId = null;
+    refreshAllViews(true);
+    if (!silent) showToast('已重置為預設範例資料！');
+  }
+
+  function switchTab(tabIdx) {
+    [1, 2, 3].forEach(i => {
+      document.getElementById('tabBtn' + i).classList.toggle('active', i === tabIdx);
+      document.getElementById('tabPane' + i).classList.toggle('active', i === tabIdx);
+    });
+    renderStandardPreview();
+    renderChecklistPreview();
+    updateDiagram();
+  }
+
+  function syncGlobalConfig() {
+    document.getElementById('editorTableHeading').innerHTML = colorizeSymbolsHtml(document.getElementById('stdTitleInput').value);
+    renderStandardPreview();
+    renderChecklistPreview();
+    updateDiagram();
+    saveStateToLocalStorage();
+  }
+
+  function onChecklistHeaderInput() {
+    renderChecklistPreview();
+    saveStateToLocalStorage();
+  }
+
+  function colorizeSymbolsHtml(str) {
+    if (!str) return '';
+    let escaped = escapeHtml(str);
+    escaped = escaped.replace(/\r?\n/g, '<br/>');
+    escaped = escaped.replace(/★/g, '<span style="color:#0033CC;font-weight:bold;">★</span>');
+    escaped = escaped.replace(/※/g, '<span style="color:#CC0000;font-weight:bold;">※</span>');
+    return escaped;
+  }
+
+  function insertSymbol(e, sym) {
+    e.preventDefault();
+    if (!lastFocusedInput) {
+      showToast('請先點選表格內的文字框，再點擊符號按鈕！', true);
+      return;
+    }
+    const start = lastFocusedInput.selectionStart || 0;
+    const end = lastFocusedInput.selectionEnd || 0;
+    const val = lastFocusedInput.value || '';
+    lastFocusedInput.value = val.substring(0, start) + sym + val.substring(end);
+    lastFocusedInput.selectionStart = lastFocusedInput.selectionEnd = start + sym.length;
+    lastFocusedInput.focus();
+    lastFocusedInput.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  // ==================== 右下角安衛表單索引庫 ====================
+  function renderSafetyFormsManager() {
+    const container = document.getElementById('safetyFormsListContainer');
+    container.innerHTML = '';
+    if (safetyForms.length === 0) {
+      container.innerHTML = `<div style="color:#94a3b8; font-size:0.82rem; padding:4px;">目前無安衛表單，請由下方新增</div>`;
+      return;
+    }
+    safetyForms.forEach(sf => {
+      const div = document.createElement('div');
+      div.className = 'safety-item';
+      div.innerHTML = `
+        <b style="color:#CC0000; flex-shrink:0;">※</b>
+        <input type="text" value="${escapeHtml(sf.name)}" oninput="updateSafetyFormName('${sf.id}', this.value)" title="直接修改安衛表單編號與名稱">
+        <button class="btn-danger-ghost" onclick="removeSafetyForm('${sf.id}')" title="刪除此安衛表">✕</button>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function updateSafetyFormName(sfId, newName) {
+    const sf = safetyForms.find(s => s.id === sfId);
+    if (!sf) return;
+    sf.name = newName;
+    document.querySelectorAll(`.sf-label-${sfId}`).forEach(el => {
+      el.textContent = newName;
+    });
+    renderStandardPreview();
+    renderChecklistPreview();
+    updateDiagram();
+    saveStateToLocalStorage();
+  }
+
+  function addSafetyForm() {
+    const inp = document.getElementById('newSafetyFormInput');
+    const val = inp.value.trim();
+    if (!val) return;
+    safetyForms.push({ id: 'sf_' + Date.now(), name: val });
+    inp.value = '';
+    refreshAllViews();
+    showToast(`已新增安衛表單：${val}`);
+  }
+
+  function removeSafetyForm(id) {
+    safetyForms = safetyForms.filter(s => s.id !== id);
+    appData.forEach(f => {
+      f.safetyFormIds = (f.safetyFormIds || []).filter(sid => sid !== id);
+    });
+    refreshAllViews();
+  }
+
+  function getSafetyNamesByIds(ids) {
+    if (!Array.isArray(ids)) return [];
+    return ids.map(id => {
+      const found = safetyForms.find(s => s.id === id);
+      return found ? found.name.trim() : '';
+    }).filter(Boolean);
+  }
+
+  // ==================== 組合每一列「管理紀錄」最終輸出文字 ====================
+  function composeRecordText(flow, cr) {
+    const mainFormName = document.getElementById('chkFormTitleInput').value.trim() || '施工抽查紀錄表';
+    const parts = [];
+    if (cr.useMainForm && mainFormName) {
+      parts.push(mainFormName);
+    }
+    if (cr.customRecord && cr.customRecord.trim()) {
+      parts.push(cr.customRecord.trim());
+    }
+    if (flow.isSafetyPoint) {
+      const sfNames = getSafetyNamesByIds(flow.safetyFormIds);
+      sfNames.forEach(n => {
+        if (!parts.includes(n)) parts.push(n);
+      });
+    }
+    return parts.join('\n');
+  }
+
+  // ==================== 防呆檢核引擎 ====================
+  function validateAllData() {
+    const errors = [];
+    appData.forEach(flow => {
+      if (!flow.flowName.trim()) {
+        errors.push(`【${getPhaseLabel(flow.phase)}】有施工工項名稱空白`);
+      }
+      const sfNames = getSafetyNamesByIds(flow.safetyFormIds);
+      if (flow.isSafetyPoint && sfNames.length === 0) {
+        errors.push(`施工工項「${flow.flowName || '未命名'}」勾選了 ※ 安衛查驗點，請至少勾選 1 張對應的安衛表單！`);
+      }
+      flow.mgmtItems.forEach(mgmt => {
+        if (!mgmt.name.trim()) {
+          errors.push(`「${flow.flowName}」底下有管理項目(A)名稱空白`);
+        }
+        mgmt.criteriaList.forEach(cr => {
+          if (!cr.std.trim()) {
+            errors.push(`管理項目「${mgmt.name || '未命名'}」的抽查標準(B)不可空白`);
+          }
+          if (!cr.freq.trim()) {
+            errors.push(`管理項目「${mgmt.name || '未命名'}」的抽查頻率不可空白`);
+          }
+          if (mgmt.isStopPoint && cr.freq.includes('不定期')) {
+            errors.push(`【停留點防呆】管理項目「★ ${mgmt.name}」為檢驗停留點，抽查頻率不可填「${cr.freq}」！`);
+          }
+        });
+      });
+    });
+
+    const banner = document.getElementById('validationBanner');
+    const badge = document.getElementById('navBadge');
+    if (errors.length === 0) {
+      banner.className = 'validation-banner val-ok';
+      banner.innerHTML = `✅ 防呆檢核通過：所有必填欄位完整，且 ★ 檢驗停留點無「不定期」頻率衝突！`;
+      badge.className = 'tab-badge badge-ok';
+      badge.textContent = '✓ 檢核通過';
+    } else {
+      banner.className = 'validation-banner val-err';
+      banner.innerHTML = `
+        <div>⚠️ 發現 ${errors.length} 項防呆異常（請修正表格內紅框處）：</div>
+        <ul style="margin:4px 0 0 0; padding-left:20px; font-size:0.82rem;">
+          ${errors.slice(0, 4).map(e => `<li>${escapeHtml(e)}</li>`).join('')}
+          ${errors.length > 4 ? `<li>...還有 ${errors.length - 4} 項異常</li>` : ''}
+        </ul>
+      `;
+      badge.className = 'tab-badge badge-err';
+      badge.textContent = `⚠ ${errors.length} 異常`;
+    }
+    return errors;
+  }
+
+  function getPhaseLabel(ph) {
+    return ph === 'pre' ? '施工前' : (ph === 'post' ? '施工後' : '施工中');
+  }
+
+  // ==================== 頁籤 1：直覺式表格編輯器 ====================
+  function renderStandardEditor() {
+    renderPreservingScroll(() => {
+      document.getElementById('editorTableHeading').innerHTML = colorizeSymbolsHtml(document.getElementById('stdTitleInput').value);
+      const tbody = document.getElementById('wysiwygTbody');
+      tbody.innerHTML = '';
+
+      const phases = [
+        { key: 'pre', label: '施工前', cellCls: 'phase-cell-pre', rowCls: 'row-phase-pre' },
+        { key: 'mid', label: '施工中', cellCls: 'phase-cell-mid', rowCls: 'row-phase-mid' },
+        { key: 'post', label: '施工後', cellCls: 'phase-cell-post', rowCls: 'row-phase-post' }
+      ];
+
+      phases.forEach(p => {
+        const flowsInPhase = appData.filter(f => f.phase === p.key);
+
+        if (flowsInPhase.length === 0) {
+          const tr = document.createElement('tr');
+          tr.className = p.rowCls;
+          tr.innerHTML = `
+            <td class="${p.cellCls}">
+              <div style="font-size:1rem; line-height:1.35; margin-bottom:6px;">${p.label.split('').join('<br>')}</div>
+              <button class="btn btn-primary btn-xs" onclick="addFlow('${p.key}')">＋工項</button>
+            </td>
+            <td colspan="10" style="text-align:center; color:#475569; padding:18px; font-weight:700; vertical-align:middle;">
+              📥 目前【${p.label}】尚無工項，可點左側「＋工項」新增，或直接將其他工項拖曳至此處放入
+            </td>
+          `;
+          bindPhaseEmptyDropEvents(tr, p.key);
+          tbody.appendChild(tr);
+          return;
+        }
+
+        let phaseTotalRows = 0;
+        flowsInPhase.forEach(f => f.mgmtItems.forEach(m => { phaseTotalRows += m.criteriaList.length; }));
+
+        let phaseCellRendered = false;
+
+        flowsInPhase.forEach((flow) => {
+          let flowTotalRows = 0;
+          flow.mgmtItems.forEach(m => { flowTotalRows += m.criteriaList.length; });
+          let flowCellRendered = false;
+
+          const flowSafetyNames = getSafetyNamesByIds(flow.safetyFormIds);
+
+          flow.mgmtItems.forEach((mgmt) => {
+            const mgmtTotalRows = mgmt.criteriaList.length;
+            let mgmtCellRendered = false;
+
+            mgmt.criteriaList.forEach((cr) => {
+              const tr = document.createElement('tr');
+              tr.className = p.rowCls;
+
+              // 1. 階段欄
+              if (!phaseCellRendered) {
+                const tdPhase = document.createElement('td');
+                tdPhase.className = p.cellCls;
+                tdPhase.rowSpan = phaseTotalRows;
+                tdPhase.innerHTML = `
+                  <div style="font-size:1.02rem; line-height:1.35; margin-bottom:10px;">${p.label.split('').join('<br>')}</div>
+                  <button class="btn btn-primary btn-xs" onclick="addFlow('${p.key}')" title="在${p.label}新增施工工項">＋工項</button>
+                `;
+                bindPhaseHeaderDropEvents(tdPhase, p.key);
+                tr.appendChild(tdPhase);
+                phaseCellRendered = true;
+              }
+
+              // 2. 施工工項欄
+              if (!flowCellRendered) {
+                const tdFlow = document.createElement('td');
+                tdFlow.className = 'flow-cell';
+                tdFlow.rowSpan = flowTotalRows;
+                tdFlow.dataset.flowId = flow.id;
+
+                const selectedIds = new Set(flow.safetyFormIds || []);
+                const safetyCheckboxesHtml = safetyForms.map(sf => `
+                  <label class="safety-multi-item">
+                    <input type="checkbox" ${selectedIds.has(sf.id) ? 'checked' : ''} onchange="toggleFlowSafetyFormItem('${flow.id}', '${sf.id}', this.checked)">
+                    <span class="sf-label-${sf.id}">${escapeHtml(sf.name)}</span>
+                  </label>
+                `).join('');
+
+                const noSafetySelectedErr = flow.isSafetyPoint && selectedIds.size === 0;
+
+                tdFlow.innerHTML = `
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
+                    <span class="drag-handle" title="按住上下拖曳此施工工項順序">☰ 拖曳工項</span>
+                    <button class="btn-danger-ghost" onclick="deleteFlow('${flow.id}')" title="刪除此施工工項">✕</button>
+                  </div>
+                  <div style="display:flex; align-items:flex-start; gap:3px; margin-bottom:6px;">
+                    ${flow.isSafetyPoint ? '<span style="color:#CC0000;font-weight:bold;font-size:1rem;margin-top:4px;">※</span>' : ''}
+                    <textarea id="inp_flow_${flow.id}" rows="2" class="cell-input ${!flow.flowName.trim() ? 'input-error' : ''}" style="font-weight:700;" placeholder="施工工項名稱" oninput="onFlowNameInput('${flow.id}', this.value)">${escapeHtml(flow.flowName)}</textarea>
+                  </div>
+                  <div style="display:flex; align-items:center; justify-content:space-between; gap:4px; flex-wrap:wrap;">
+                    <label style="cursor:pointer; font-size:0.78rem; font-weight:700; color:#b91c1c; display:inline-flex; align-items:center; gap:4px; background:#fff; padding:2px 6px; border-radius:4px; border:1px solid #fca5a5;">
+                      <input type="checkbox" ${flow.isSafetyPoint ? 'checked' : ''} onchange="toggleFlowSafety('${flow.id}', this.checked)">
+                      <span><b style="color:#CC0000;">※</b> 安衛點</span>
+                    </label>
+                    <button class="btn btn-outline btn-xs" onclick="addMgmtItem('${flow.id}')" title="在此工項新增管理項目(A)">＋管理項目</button>
+                  </div>
+                  ${flow.isSafetyPoint ? `
+                    <div class="safety-multi-box ${noSafetySelectedErr ? 'input-error' : ''}">
+                      <div style="font-weight:700; color:#991b1b; margin-bottom:3px;">勾選安衛表 (自動印於管理紀錄)：</div>
+                      ${safetyCheckboxesHtml || '<div style="color:#dc2626;">請先於右側綠框新增安衛表</div>'}
+                      ${noSafetySelectedErr ? '<span class="err-msg">⚠ 請至少勾選一張安衛表</span>' : ''}
+                    </div>
+                  ` : ''}
+                `;
+
+                bindDragEvents(tdFlow, 'flow', flow.id, null);
+                tr.appendChild(tdFlow);
+                flowCellRendered = true;
+              }
+
+              // 3. 管理項目(A)
+              if (!mgmtCellRendered) {
+                const tdMgmt = document.createElement('td');
+                tdMgmt.rowSpan = mgmtTotalRows;
+                tdMgmt.dataset.flowId = flow.id;
+                tdMgmt.dataset.mgmtId = mgmt.id;
+
+                tdMgmt.innerHTML = `
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
+                    <span class="drag-handle" title="按住上下拖曳此管理項目順序">☰ 拖曳</span>
+                    <div style="display:flex; gap:4px;">
+                      <button class="btn btn-outline btn-xs" onclick="addCriteria('${flow.id}','${mgmt.id}')" title="新增一列抽查標準(B)">＋標準列</button>
+                      <button class="btn-danger-ghost" onclick="deleteMgmtItem('${flow.id}','${mgmt.id}')" title="刪除此管理項目">✕</button>
+                    </div>
+                  </div>
+                  <div style="display:flex; align-items:flex-start; gap:3px; margin-bottom:6px;">
+                    ${mgmt.isStopPoint ? '<span style="color:#0033CC;font-weight:bold;font-size:1rem;margin-top:4px;">★</span>' : ''}
+                    <textarea id="inp_mgmt_${mgmt.id}" rows="2" class="cell-input ${!mgmt.name.trim() ? 'input-error' : ''}" style="font-weight:700;" placeholder="管理項目(A)" oninput="onMgmtNameInput('${flow.id}','${mgmt.id}', this.value)">${escapeHtml(mgmt.name)}</textarea>
+                  </div>
+                  <label style="cursor:pointer; font-size:0.78rem; font-weight:700; color:#1e40af; display:inline-flex; align-items:center; gap:4px; background:#eff6ff; padding:2px 7px; border-radius:4px; border:1px solid #bfdbfe;">
+                    <input type="checkbox" ${mgmt.isStopPoint ? 'checked' : ''} onchange="toggleMgmtStopPoint('${flow.id}','${mgmt.id}', this.checked)">
+                    <span><b style="color:#0033CC;">★</b> 檢驗停留點</span>
+                  </label>
+                `;
+
+                bindDragEvents(tdMgmt, 'mgmt', flow.id, mgmt.id);
+                tr.appendChild(tdMgmt);
+                mgmtCellRendered = true;
+              }
+
+              // 4. 抽查標準(B)
+              const isFreqInvalid = (!cr.freq.trim()) || (mgmt.isStopPoint && cr.freq.includes('不定期'));
+              const isStdInvalid = !cr.std.trim();
+
+              const tdStd = document.createElement('td');
+              tdStd.innerHTML = `<textarea id="inp_std_${cr.id}" rows="${cr.std.includes('\n') ? 4 : 2}" class="cell-input ${isStdInvalid ? 'input-error' : ''}" placeholder="輸入抽查標準(B)" oninput="onCriteriaInput('${flow.id}','${mgmt.id}','${cr.id}','std',this.value)">${escapeHtml(cr.std)}</textarea>`;
+              tr.appendChild(tdStd);
+
+              // 5. 抽查時機
+              const tdTiming = document.createElement('td');
+              tdTiming.style.textAlign = 'center';
+              tdTiming.style.verticalAlign = 'middle';
+              tdTiming.style.fontWeight = '700';
+              tdTiming.style.color = '#334155';
+              tdTiming.textContent = p.label;
+              tr.appendChild(tdTiming);
+
+              // 6. 抽查方法
+              const tdMethod = document.createElement('td');
+              tdMethod.innerHTML = `<textarea rows="2" class="cell-input" style="text-align:center;" placeholder="如：目視" oninput="onCriteriaInput('${flow.id}','${mgmt.id}','${cr.id}','method',this.value)">${escapeHtml(cr.method)}</textarea>`;
+              tr.appendChild(tdMethod);
+
+              // 7. 抽查頻率
+              const tdFreq = document.createElement('td');
+              tdFreq.innerHTML = `
+                <textarea id="inp_freq_${cr.id}" rows="2" class="cell-input ${isFreqInvalid ? 'input-error' : ''}" style="text-align:center;" placeholder="如：每次" oninput="onCriteriaInput('${flow.id}','${mgmt.id}','${cr.id}','freq',this.value)">${escapeHtml(cr.freq)}</textarea>
+                <span id="err_freq_${cr.id}" class="err-msg" style="display:${(mgmt.isStopPoint && cr.freq.includes('不定期')) ? 'block' : 'none'};">⚠ 停留點禁填不定期</span>
+              `;
+              tr.appendChild(tdFreq);
+
+              // 8. 不符合之處置方法
+              const tdAction = document.createElement('td');
+              tdAction.innerHTML = `<textarea rows="2" class="cell-input" style="text-align:center;" placeholder="如：改正" oninput="onCriteriaInput('${flow.id}','${mgmt.id}','${cr.id}','action',this.value)">${escapeHtml(cr.action)}</textarea>`;
+              tr.appendChild(tdAction);
+
+              // 9. 極簡化「管理紀錄」編輯欄
+              const tdRecord = document.createElement('td');
+              const safetyBadgeHtml = (flow.isSafetyPoint && flowSafetyNames.length > 0)
+                ? `<span class="rec-badge-safety" title="已自動連動並將於預覽/Word印出：\n${escapeHtml(flowSafetyNames.join('\n'))}">※ 已連動安衛表</span>`
+                : '';
+
+              tdRecord.innerHTML = `
+                <div class="rec-compact-box">
+                  <div class="rec-compact-top">
+                    <label class="rec-chk-simple" title="勾選後自動帶入右上角設定之施工抽查紀錄表">
+                      <input type="checkbox" ${cr.useMainForm ? 'checked' : ''} onchange="toggleCriteriaMainForm('${flow.id}','${mgmt.id}','${cr.id}', this.checked)">
+                      <span>本施工抽查表</span>
+                    </label>
+                    ${safetyBadgeHtml}
+                  </div>
+                  <textarea rows="1" class="cell-input" style="min-height:28px; padding:3px 6px !important;" placeholder="其他表單 (如：核備文件)" oninput="onCriteriaInput('${flow.id}','${mgmt.id}','${cr.id}','customRecord',this.value)">${escapeHtml(cr.customRecord || '')}</textarea>
+                </div>
+              `;
+              tr.appendChild(tdRecord);
+
+              // 10. 備註
+              const tdNote = document.createElement('td');
+              tdNote.innerHTML = `<textarea rows="2" class="cell-input" placeholder="備註" oninput="onCriteriaInput('${flow.id}','${mgmt.id}','${cr.id}','note',this.value)">${escapeHtml(cr.note)}</textarea>`;
+              tr.appendChild(tdNote);
+
+              // 11. 刪列
+              const tdOp = document.createElement('td');
+              tdOp.style.textAlign = 'center';
+              tdOp.style.verticalAlign = 'middle';
+              tdOp.innerHTML = `<button class="btn-danger-ghost" onclick="deleteCriteria('${flow.id}','${mgmt.id}','${cr.id}')" title="刪除此列">✕</button>`;
+              tr.appendChild(tdOp);
+
+              tbody.appendChild(tr);
+            });
+          });
+        });
+      });
+    });
+  }
+
+  // ==================== 局部更新輸入事件 (同步觸發自動暫存) ====================
+  function onFlowNameInput(flowId, val) {
+    const f = appData.find(x => x.id === flowId);
+    if (!f) return;
+    f.flowName = val;
+    const inp = document.getElementById('inp_flow_' + flowId);
+    if (inp) inp.classList.toggle('input-error', !val.trim());
+    validateAllData();
+    renderStandardPreview();
+    renderChecklistPreview();
+    updateFlowBreakDropdown();
+    updateDiagram();
+    saveStateToLocalStorage();
+  }
+
+  function onMgmtNameInput(flowId, mgmtId, val) {
+    const f = appData.find(x => x.id === flowId);
+    if (!f) return;
+    const m = f.mgmtItems.find(x => x.id === mgmtId);
+    if (!m) return;
+    m.name = val;
+    const inp = document.getElementById('inp_mgmt_' + mgmtId);
+    if (inp) inp.classList.toggle('input-error', !val.trim());
+    validateAllData();
+    renderStandardPreview();
+    renderChecklistPreview();
+    saveStateToLocalStorage();
+  }
+
+  function onCriteriaInput(flowId, mgmtId, crId, field, val) {
+    const f = appData.find(x => x.id === flowId);
+    if (!f) return;
+    const m = f.mgmtItems.find(x => x.id === mgmtId);
+    if (!m) return;
+    const c = m.criteriaList.find(x => x.id === crId);
+    if (!c) return;
+    c[field] = val;
+
+    if (field === 'std') {
+      const el = document.getElementById('inp_std_' + crId);
+      if (el) el.classList.toggle('input-error', !val.trim());
+    } else if (field === 'freq') {
+      const el = document.getElementById('inp_freq_' + crId);
+      const errSpan = document.getElementById('err_freq_' + crId);
+      const isBad = (!val.trim()) || (m.isStopPoint && val.includes('不定期'));
+      if (el) el.classList.toggle('input-error', isBad);
+      if (errSpan) errSpan.style.display = (m.isStopPoint && val.includes('不定期')) ? 'block' : 'none';
+    }
+    validateAllData();
+    renderStandardPreview();
+    renderChecklistPreview();
+    saveStateToLocalStorage();
+  }
+
+  function toggleCriteriaMainForm(flowId, mgmtId, crId, checked) {
+    const f = appData.find(x => x.id === flowId);
+    if (!f) return;
+    const m = f.mgmtItems.find(x => x.id === mgmtId);
+    if (!m) return;
+    const c = m.criteriaList.find(x => x.id === crId);
+    if (!c) return;
+    c.useMainForm = checked;
+    renderStandardPreview();
+    saveStateToLocalStorage();
+  }
+
+  function toggleFlowSafety(flowId, checked) {
+    const f = appData.find(x => x.id === flowId);
+    if (!f) return;
+    f.isSafetyPoint = checked;
+    if (checked && (!f.safetyFormIds || f.safetyFormIds.length === 0) && safetyForms.length > 0) {
+      f.safetyFormIds = [safetyForms[0].id];
+    }
+    refreshAllViews();
+  }
+
+  function toggleFlowSafetyFormItem(flowId, sfId, checked) {
+    const f = appData.find(x => x.id === flowId);
+    if (!f) return;
+    if (!f.safetyFormIds) f.safetyFormIds = [];
+    if (checked) {
+      if (!f.safetyFormIds.includes(sfId)) f.safetyFormIds.push(sfId);
+    } else {
+      f.safetyFormIds = f.safetyFormIds.filter(id => id !== sfId);
+    }
+    refreshAllViews();
+  }
+
+  function toggleMgmtStopPoint(flowId, mgmtId, checked) {
+    const f = appData.find(x => x.id === flowId);
+    if (!f) return;
+    const m = f.mgmtItems.find(x => x.id === mgmtId);
+    if (!m) return;
+    m.isStopPoint = checked;
+    refreshAllViews();
+  }
+
+  // ==================== 拖曳排序系統 ====================
+  function bindPhaseEmptyDropEvents(trEl, targetPhaseKey) {
+    trEl.addEventListener('dragover', (e) => {
+      if (!dragState.type || dragState.type !== 'flow') return;
+      e.preventDefault();
+      trEl.classList.add('drag-over-box');
+    });
+    trEl.addEventListener('dragleave', () => {
+      trEl.classList.remove('drag-over-box');
+    });
+    trEl.addEventListener('drop', (e) => {
+      e.preventDefault();
+      trEl.classList.remove('drag-over-box');
+      if (!dragState.type || dragState.type !== 'flow') return;
+      const fromIdx = appData.findIndex(f => String(f.id) === dragState.flowId);
+      if (fromIdx === -1) return;
+      const moved = appData.splice(fromIdx, 1)[0];
+      moved.phase = targetPhaseKey;
+      appData.push(moved);
+      refreshAllViews();
+    });
+  }
+
+  function bindPhaseHeaderDropEvents(tdPhaseEl, targetPhaseKey) {
+    tdPhaseEl.addEventListener('dragover', (e) => {
+      if (!dragState.type || dragState.type !== 'flow') return;
+      e.preventDefault();
+      const rect = tdPhaseEl.getBoundingClientRect();
+      const isBottom = (e.clientY - rect.top) > (rect.height / 2);
+      tdPhaseEl.classList.toggle('drag-over-top', !isBottom);
+      tdPhaseEl.classList.toggle('drag-over-bottom', isBottom);
+    });
+    tdPhaseEl.addEventListener('dragleave', () => {
+      tdPhaseEl.classList.remove('drag-over-top', 'drag-over-bottom');
+    });
+    tdPhaseEl.addEventListener('drop', (e) => {
+      e.preventDefault();
+      const rect = tdPhaseEl.getBoundingClientRect();
+      const isBottom = (e.clientY - rect.top) > (rect.height / 2);
+      tdPhaseEl.classList.remove('drag-over-top', 'drag-over-bottom');
+      if (!dragState.type || dragState.type !== 'flow') return;
+
+      const fromIdx = appData.findIndex(f => String(f.id) === dragState.flowId);
+      if (fromIdx === -1) return;
+      const moved = appData.splice(fromIdx, 1)[0];
+      moved.phase = targetPhaseKey;
+
+      if (!isBottom) {
+        const firstIdx = appData.findIndex(f => f.phase === targetPhaseKey);
+        if (firstIdx !== -1) appData.splice(firstIdx, 0, moved);
+        else appData.unshift(moved);
+      } else {
+        let lastIdx = -1;
+        appData.forEach((f, i) => { if (f.phase === targetPhaseKey) lastIdx = i; });
+        if (lastIdx !== -1) appData.splice(lastIdx + 1, 0, moved);
+        else appData.push(moved);
+      }
+      refreshAllViews();
+    });
+  }
+
+  function bindDragEvents(cellEl, type, flowId, mgmtId) {
+    const handle = cellEl.querySelector('.drag-handle');
+    if (handle) {
+      handle.addEventListener('mousedown', () => cellEl.setAttribute('draggable', 'true'));
+      handle.addEventListener('mouseup', () => cellEl.removeAttribute('draggable'));
+    }
+
+    cellEl.addEventListener('dragstart', (e) => {
+      if (cellEl.getAttribute('draggable') !== 'true') { e.preventDefault(); return; }
+      e.stopPropagation();
+      dragState = { type, flowId: String(flowId), mgmtId: mgmtId ? String(mgmtId) : null };
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', flowId);
+    });
+
+    cellEl.addEventListener('dragover', (e) => {
+      if (!dragState.type || dragState.type !== type) return;
+      if (type === 'mgmt' && String(flowId) !== dragState.flowId) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const rect = cellEl.getBoundingClientRect();
+      const isBottom = (e.clientY - rect.top) > (rect.height / 2);
+      cellEl.classList.toggle('drag-over-top', !isBottom);
+      cellEl.classList.toggle('drag-over-bottom', isBottom);
+    });
+
+    cellEl.addEventListener('dragleave', () => {
+      cellEl.classList.remove('drag-over-top', 'drag-over-bottom');
+    });
+
+    cellEl.addEventListener('drop', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      cellEl.classList.remove('drag-over-top', 'drag-over-bottom');
+      if (!dragState.type || dragState.type !== type) return;
+
+      const rect = cellEl.getBoundingClientRect();
+      const isBottom = (e.clientY - rect.top) > (rect.height / 2);
+
+      if (type === 'flow') {
+        if (dragState.flowId === String(flowId)) return;
+        const fromIdx = appData.findIndex(f => String(f.id) === dragState.flowId);
+        const toIdx = appData.findIndex(f => String(f.id) === String(flowId));
+        if (fromIdx === -1 || toIdx === -1) return;
+        const targetPhase = appData[toIdx].phase;
+        const moved = appData.splice(fromIdx, 1)[0];
+        moved.phase = targetPhase;
+        const newToIdx = appData.findIndex(f => String(f.id) === String(flowId));
+        appData.splice(isBottom ? newToIdx + 1 : newToIdx, 0, moved);
+        refreshAllViews();
+      } else if (type === 'mgmt') {
+        if (String(flowId) !== dragState.flowId || dragState.mgmtId === String(mgmtId)) return;
+        const flowObj = appData.find(f => String(f.id) === String(flowId));
+        if (!flowObj) return;
+        const fromIdx = flowObj.mgmtItems.findIndex(m => String(m.id) === dragState.mgmtId);
+        const toIdx = flowObj.mgmtItems.findIndex(m => String(m.id) === String(mgmtId));
+        if (fromIdx === -1 || toIdx === -1) return;
+        const moved = flowObj.mgmtItems.splice(fromIdx, 1)[0];
+        const newToIdx = flowObj.mgmtItems.findIndex(m => String(m.id) === String(mgmtId));
+        flowObj.mgmtItems.splice(isBottom ? newToIdx + 1 : newToIdx, 0, moved);
+        refreshAllViews();
+      }
+    });
+
+    cellEl.addEventListener('dragend', () => {
+      cellEl.removeAttribute('draggable');
+      document.querySelectorAll('.drag-over-top, .drag-over-bottom, .drag-over-box').forEach(el => {
+        el.classList.remove('drag-over-top', 'drag-over-bottom', 'drag-over-box');
+      });
+      dragState = { type: null, flowId: null, mgmtId: null };
+    });
+  }
+
+  // ==================== 新增 / 刪除列操作 ====================
+  function addFlow(phaseKey) {
+    const uid = Date.now();
+    appData.push({
+      id: 'fl_' + uid,
+      phase: phaseKey,
+      flowName: '新施工工項',
+      isSafetyPoint: false,
+      safetyFormIds: [],
+      mgmtItems: [
+        {
+          id: 'mg_' + uid,
+          name: '新管理項目',
+          isStopPoint: false,
+          criteriaList: [
+            { id: 'cr_' + uid, std: '依設計圖說及規範辦理', method: '目視', freq: '每次', action: '改正', useMainForm: true, customRecord: '', note: '' }
+          ]
+        }
+      ]
+    });
+    refreshAllViews();
+  }
+
+  function deleteFlow(flowId) {
+    if (appData.length <= 1) { alert('至少需保留一個施工工項！'); return; }
+    appData = appData.filter(f => String(f.id) !== String(flowId));
+    if (String(splitTaskId) === String(flowId)) splitTaskId = null;
+    refreshAllViews();
+  }
+
+  function addMgmtItem(flowId) {
+    const f = appData.find(x => String(x.id) === String(flowId));
+    if (!f) return;
+    const uid = Date.now();
+    f.mgmtItems.push({
+      id: 'mg_' + uid,
+      name: '新管理項目',
+      isStopPoint: false,
+      criteriaList: [
+        { id: 'cr_' + uid, std: '', method: '目視', freq: '每次', action: '改正', useMainForm: true, customRecord: '', note: '' }
+      ]
+    });
+    refreshAllViews();
+  }
+
+  function deleteMgmtItem(flowId, mgmtId) {
+    const f = appData.find(x => String(x.id) === String(flowId));
+    if (!f) return;
+    if (f.mgmtItems.length <= 1) { alert('每個施工工項至少需保留一個管理項目(A)！'); return; }
+    f.mgmtItems = f.mgmtItems.filter(m => String(m.id) !== String(mgmtId));
+    refreshAllViews();
+  }
+
+  function addCriteria(flowId, mgmtId) {
+    const f = appData.find(x => String(x.id) === String(flowId));
+    if (!f) return;
+    const m = f.mgmtItems.find(x => String(x.id) === String(mgmtId));
+    if (!m) return;
+    const lastCr = m.criteriaList[m.criteriaList.length - 1];
+    m.criteriaList.push({
+      id: 'cr_' + Date.now(),
+      std: '',
+      method: lastCr ? lastCr.method : '目視',
+      freq: lastCr ? lastCr.freq : '每次',
+      action: lastCr ? lastCr.action : '改正',
+      useMainForm: lastCr ? lastCr.useMainForm : true,
+      customRecord: lastCr ? lastCr.customRecord : '',
+      note: ''
+    });
+    refreshAllViews();
+  }
+
+  function deleteCriteria(flowId, mgmtId, crId) {
+    const f = appData.find(x => String(x.id) === String(flowId));
+    if (!f) return;
+    const m = f.mgmtItems.find(x => String(x.id) === String(mgmtId));
+    if (!m) return;
+    if (m.criteriaList.length <= 1) {
+      deleteMgmtItem(flowId, mgmtId);
+      return;
+    }
+    m.criteriaList = m.criteriaList.filter(c => String(c.id) !== String(crId));
+    refreshAllViews();
+  }
+
+  function refreshAllViews(shouldSave = true) {
+    renderSafetyFormsManager();
+    renderStandardEditor();
+    validateAllData();
+    renderStandardPreview();
+    renderChecklistPreview();
+    updateFlowBreakDropdown();
+    updateDiagram();
+    if (shouldSave) saveStateToLocalStorage();
+  }
+
+  // ==================== 展平資料計算 Rowspan ====================
+  function buildFlattenedRows() {
+    const phaseOrder = ['pre', 'mid', 'post'];
+    const flatRows = [];
+
+    phaseOrder.forEach(pKey => {
+      const flowsInPhase = appData.filter(f => f.phase === pKey);
+      flowsInPhase.forEach(flow => {
+        flow.mgmtItems.forEach(mgmt => {
+          mgmt.criteriaList.forEach(cr => {
+            const composedRec = composeRecordText(flow, cr);
+            flatRows.push({
+              phase: pKey,
+              phaseLabel: getPhaseLabel(pKey),
+              flowId: flow.id,
+              flowName: flow.flowName,
+              isSafetyPoint: flow.isSafetyPoint,
+              safetyFormNames: getSafetyNamesByIds(flow.safetyFormIds),
+              mgmtId: mgmt.id,
+              mgmtName: mgmt.name,
+              isStopPoint: mgmt.isStopPoint,
+              crId: cr.id,
+              std: cr.std,
+              method: cr.method,
+              freq: cr.freq,
+              action: cr.action,
+              record: composedRec,
+              note: cr.note,
+              phaseSpan: 0, flowSpan: 0, mgmtSpan: 0, recordSpan: 0
+            });
+          });
+        });
+      });
+    });
+
+    for (let i = 0; i < flatRows.length; i++) {
+      if (i === 0 || flatRows[i].phase !== flatRows[i - 1].phase) {
+        let span = 1;
+        for (let j = i + 1; j < flatRows.length && flatRows[j].phase === flatRows[i].phase; j++) span++;
+        flatRows[i].phaseSpan = span;
+      }
+      if (i === 0 || flatRows[i].flowId !== flatRows[i - 1].flowId) {
+        let span = 1;
+        for (let j = i + 1; j < flatRows.length && flatRows[j].flowId === flatRows[i].flowId; j++) span++;
+        flatRows[i].flowSpan = span;
+      }
+      if (i === 0 || flatRows[i].mgmtId !== flatRows[i - 1].mgmtId) {
+        let span = 1;
+        for (let j = i + 1; j < flatRows.length && flatRows[j].mgmtId === flatRows[i].mgmtId; j++) span++;
+        flatRows[i].mgmtSpan = span;
+      }
+      const rec = (flatRows[i].record || '').trim();
+      if (!rec) {
+        flatRows[i].recordSpan = 1;
+      } else if (i === 0 || (flatRows[i - 1].record || '').trim() !== rec || flatRows[i - 1].phase !== flatRows[i].phase) {
+        let span = 1;
+        for (let j = i + 1; j < flatRows.length; j++) {
+          if ((flatRows[j].record || '').trim() === rec && flatRows[j].phase === flatRows[i].phase) span++;
+          else break;
+        }
+        flatRows[i].recordSpan = span;
+      }
+    }
+    return flatRows;
+  }
+
+  // ==================== 輸出 Word「抽查標準表」HTML ====================
+  function generateStandardTableHtml() {
+    const stdTitle = document.getElementById('stdTitleInput').value.trim() || '施工抽查標準表';
+    const flatRows = buildFlattenedRows();
+
+    const colgroupHtml = `
+      <colgroup>
+        <col style="width:3.5%;">
+        <col style="width:4.5%;">
+        <col style="width:14%;">
+        <col style="width:26%;">
+        <col style="width:6.5%;">
+        <col style="width:8.5%;">
+        <col style="width:7.5%;">
+        <col style="width:8%;">
+        <col style="width:16%;">
+        <col style="width:5.5%;">
+      </colgroup>
+    `;
+
+    let trs = '';
+    flatRows.forEach(r => {
+      trs += `<tr>`;
+      if (r.phaseSpan > 0) {
+        trs += `<td rowspan="${r.phaseSpan}" align="center" style="text-align:center;">${r.phaseLabel.split('').join('<br/>')}</td>`;
+      }
+      if (r.flowSpan > 0) {
+        const safetyPrefix = r.isSafetyPoint ? `<span style="color:#CC0000;font-weight:bold;">※</span><br/>` : '';
+        trs += `<td rowspan="${r.flowSpan}" align="center" style="text-align:center;">${safetyPrefix}${colorizeSymbolsHtml(r.flowName).split('').join('<br/>')}</td>`;
+      }
+      if (r.mgmtSpan > 0) {
+        const starPrefix = r.isStopPoint ? `<span style="color:#0033CC;font-weight:bold;">★</span>` : '';
+        trs += `<td rowspan="${r.mgmtSpan}">${starPrefix}${colorizeSymbolsHtml(r.mgmtName)}</td>`;
+      }
+      trs += `
+        <td>${colorizeSymbolsHtml(r.std)}</td>
+        <td align="center" style="text-align:center;">${r.phaseLabel}</td>
+        <td align="center" style="text-align:center;">${colorizeSymbolsHtml(r.method)}</td>
+        <td align="center" style="text-align:center;">${colorizeSymbolsHtml(r.freq)}</td>
+        <td align="center" style="text-align:center;">${colorizeSymbolsHtml(r.action)}</td>
+      `;
+      if (r.recordSpan > 0) {
+        trs += `<td rowspan="${r.recordSpan}">${colorizeSymbolsHtml(r.record)}</td>`;
+      }
+      trs += `<td>${colorizeSymbolsHtml(r.note)}</td>`;
+      trs += `</tr>`;
+    });
+
+    return `
+      <div style="text-align:center; font-family:'標楷體','DFKai-SB',serif; font-size:15.5pt; font-weight:bold; margin-bottom:8pt;">
+        ${colorizeSymbolsHtml(stdTitle)}
+      </div>
+      <table class="word-table" border="1" cellspacing="0" cellpadding="4" style="width:100%; border-collapse:collapse; border:1.5pt solid #000; font-family:'標楷體','DFKai-SB',serif; font-size:10.5pt; table-layout:fixed;">
+        ${colgroupHtml}
+        <thead>
+          <tr style="background:#f8fafc; font-weight:bold; text-align:center;">
+            <td colspan="2" align="center">施工流程</td>
+            <td align="center">管理項目(A)</td>
+            <td align="center">抽查標準(B)</td>
+            <td align="center">抽查<br/>時機</td>
+            <td align="center">抽查方法</td>
+            <td align="center">抽查頻率</td>
+            <td align="center">不符合之<br/>處置方法</td>
+            <td align="center">管理紀錄</td>
+            <td align="center">備註</td>
+          </tr>
+        </thead>
+        <tbody>${trs}</tbody>
+      </table>
+      <p style="margin-top:6pt; font-family:'標楷體','DFKai-SB',serif; font-size:10.5pt; font-weight:bold;">
+        <span style="color:#0033CC;">★</span>檢驗停留點/<span style="color:#CC0000;">※</span><span style="color:#CC0000;">安衛查驗點</span>：廠商應完成自主檢查後向監造單位申請查驗；未標示者，監造單位應辦理不定期抽查。
+      </p>
+    `;
+  }
+
+  function renderStandardPreview() {
+    const paper = document.getElementById('standardPreviewPaper');
+    if (paper) paper.innerHTML = generateStandardTableHtml();
+  }
+
+  // ==================== 輸出「施工抽查表單 (頁籤 2)」HTML ====================
+  function generateChecklistTableHtml() {
+    const planHeader = document.getElementById('chkPlanHeader').value.trim();
+    const docCode = document.getElementById('chkDocCode').value.trim();
+    const formTitle = document.getElementById('chkFormTitleInput').value.trim() || '施工抽查紀錄表';
+    const projectName = document.getElementById('chkProjectName').value.trim();
+    const subProject = document.getElementById('chkSubProject').value.trim();
+    const proofDocText = document.getElementById('chkProofDocText').value.trim();
+    const serialLabel = document.getElementById('chkSerialLabel').value.trim() || '編 號';
+
+    const showProofRow = document.getElementById('chkShowProofRow').checked;
+    const showSafetyBottom = document.getElementById('chkShowSafetyBottom').checked;
+    const showDefectBottom = document.getElementById('chkShowDefectBottom').checked;
+
+    const flatRows = buildFlattenedRows();
+
+    const usedSafetyForms = [];
+    appData.forEach(f => {
+      if (f.isSafetyPoint) {
+        getSafetyNamesByIds(f.safetyFormIds).forEach(sfName => {
+          if (sfName && !usedSafetyForms.includes(sfName)) usedSafetyForms.push(sfName);
+        });
+      }
+    });
+
+    const colgroupHtml = `
+      <colgroup>
+        <col style="width:4.5%;">
+        <col style="width:5.5%;">
+        <col style="width:19.5%;">
+        <col style="width:30.5%;">
+        <col style="width:18%;">
+        <col style="width:5.5%;">
+        <col style="width:16.5%;">
+      </colgroup>
+    `;
+
+    let bodyTrs = '';
+    flatRows.forEach(r => {
+      bodyTrs += `<tr>`;
+      if (r.phaseSpan > 0) {
+        bodyTrs += `<td rowspan="${r.phaseSpan}" align="center" style="text-align:center; padding:3px 2px;">${r.phaseLabel.split('').join('<br/>')}</td>`;
+      }
+      if (r.flowSpan > 0) {
+        const safetyPrefix = r.isSafetyPoint ? `<span style="color:#CC0000;font-weight:bold;">※</span><br/>` : '';
+        bodyTrs += `<td rowspan="${r.flowSpan}" align="center" style="text-align:center; padding:3px 2px;">${safetyPrefix}${colorizeSymbolsHtml(r.flowName).split('').join('<br/>')}</td>`;
+      }
+      if (r.mgmtSpan > 0) {
+        const starPrefix = r.isStopPoint ? `<span style="color:#0033CC;font-weight:bold;">★</span>` : '';
+        bodyTrs += `<td rowspan="${r.mgmtSpan}">${starPrefix}${colorizeSymbolsHtml(r.mgmtName)}</td>`;
+      }
+      bodyTrs += `
+        <td>${colorizeSymbolsHtml(r.std)}</td>
+        <td></td>
+        <td align="center"></td>
+        <td></td>
+      `;
+      bodyTrs += `</tr>`;
+    });
+
+    let safetyBottomHtml = '';
+    if (showSafetyBottom) {
+      const sfText = usedSafetyForms.length > 0
+        ? `（${usedSafetyForms.map(s => colorizeSymbolsHtml(s)).join('、')}）`
+        : '（一般/特定施工安全衛生抽查紀錄表）';
+      safetyBottomHtml = `
+        <tr>
+          <td colspan="3" align="center" style="text-align:center; font-weight:bold;">
+            <span style="color:#CC0000;font-weight:bold;">※</span>安全衛生查驗點
+          </td>
+          <td style="font-size:10.5pt;">
+            檢視承攬廠商安全衛生自動檢查表單填報情形及填具施工安全衛生抽查紀錄表<br/>
+            <span style="color:#CC0000; font-weight:bold;">${sfText}</span>
+          </td>
+          <td style="font-size:10.5pt;">□施工前<br/>□施工中<br/>□施工後<br/><br/>□不定期</td>
+          <td></td>
+          <td></td>
+        </tr>
+      `;
+    }
+
+    let defectBottomHtml = '';
+    let bottomSignatureHtml = '';
+    if (showDefectBottom) {
+      defectBottomHtml = `
+        <tr>
+          <td rowspan="3" align="center" style="text-align:center; font-weight:bold; padding:3px 2px;">缺<br/>失<br/>複<br/>查<br/>結<br/>果</td>
+          <td align="center" style="text-align:center; padding:3px 2px;">施<br/>工<br/>前</td>
+          <td colspan="5" style="font-size:10.5pt; line-height:1.45;">
+            □已完成改善（檢附改善前中後照片）<br/>
+            □未完成改善，填至<span style="color:#CC0000;">「不合格追蹤管制表第＿項」</span>進行追蹤改善<br/>
+            複查日期：  年  月  日<br/>
+            複查人員職稱：            簽名：
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="text-align:center; padding:3px 2px;">施<br/>工<br/>中</td>
+          <td colspan="5" style="font-size:10.5pt; line-height:1.45;">
+            □已完成改善（檢附改善前中後照片）<br/>
+            □未完成改善，填至<span style="color:#CC0000;">「不合格追蹤管制表第＿項」</span>進行追蹤改善<br/>
+            複查日期：  年  月  日<br/>
+            複查人員職稱：            簽名：
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="text-align:center; padding:3px 2px;">施<br/>工<br/>後</td>
+          <td colspan="5" style="font-size:10.5pt; line-height:1.45;">
+            □已完成改善（檢附改善前中後照片）<br/>
+            □未完成改善，填至<span style="color:#CC0000;">「不合格追蹤管制表第＿項」</span>進行追蹤改善<br/>
+            複查日期：  年  月  日<br/>
+            複查人員職稱：            簽名：
+          </td>
+        </tr>
+        <tr>
+          <td colspan="7" style="font-size:10pt; line-height:1.42; padding:5pt 6pt;">
+            <b>備註：</b><br/>
+            1. 抽查標準及實際檢查情形應具體明確（例：磚砌完成後須不透光）或量化尺寸（例：磚縫 7mm~10mm）。<br/>
+            2. 抽查結果合格者註明「○」，不合格者註明「╳」，如無需檢查之項目則打「／」。<br/>
+            3. 嚴重缺失、缺失未完成改善，應填具<span style="color:#CC0000;">「不合格追蹤管制表第○項」</span>進行追蹤限期改善。<br/>
+            4. 現場抽查時，應同時審視施工廠商現場安全衛生之執行情形。<br/>
+            5. 本表由監造工地現場人員實地檢查後覈實記載簽認，並應由監造工地負責人或授權人確實複閱。
+          </td>
+        </tr>
+      `;
+      bottomSignatureHtml = `
+        <table border="0" cellspacing="0" cellpadding="0" style="width:100%; border-collapse:collapse; border:none; margin-top:8pt; font-family:'標楷體','DFKai-SB',serif; font-size:11.5pt; font-weight:bold;">
+          <tr>
+            <td style="width:50%; border:none; padding:4pt 2pt; text-align:left;">監造工地負責（授權）人：</td>
+            <td style="width:50%; border:none; padding:4pt 2pt; text-align:left;">監造現場人員簽名：</td>
+          </tr>
+        </table>
+      `;
+    }
+
+    return `
+      ${planHeader ? `<div style="text-align:center; font-family:'標楷體','DFKai-SB',serif; font-size:13.5pt; font-weight:bold; margin-bottom:2pt;">${escapeHtml(planHeader)}</div>` : ''}
+      <div style="display:flex; justify-content:${docCode ? 'space-between' : 'center'}; align-items:baseline; font-family:'標楷體','DFKai-SB',serif; margin-bottom:6pt;">
+        <span style="font-size:13.5pt; font-weight:bold;">${colorizeSymbolsHtml(formTitle)}</span>
+        ${docCode ? `<span style="font-size:11.5pt; font-weight:bold;">${escapeHtml(docCode)}</span>` : ''}
+      </div>
+
+      <table class="word-table" border="1" cellspacing="0" cellpadding="4" style="width:100%; border-collapse:collapse; border:1.5pt solid #000; font-family:'標楷體','DFKai-SB',serif; font-size:10.5pt; table-layout:fixed;">
+        ${colgroupHtml}
+        <tr>
+          <td colspan="3" style="font-weight:bold;">工程名稱</td>
+          <td>${escapeHtml(projectName)}</td>
+          <td style="font-weight:bold; text-align:center;">${escapeHtml(serialLabel)}</td>
+          <td colspan="2"></td>
+        </tr>
+        <tr>
+          <td colspan="3" style="font-weight:bold;">分項工程名稱</td>
+          <td colspan="4">${escapeHtml(subProject)}</td>
+        </tr>
+        <tr>
+          <td colspan="3" style="font-weight:bold;">抽查位置</td>
+          <td></td>
+          <td style="font-weight:bold; text-align:center;">抽查日期</td>
+          <td colspan="2" align="center" style="text-align:center;">  年  月  日</td>
+        </tr>
+        <tr>
+          <td colspan="3" style="font-weight:bold;">抽查時機</td>
+          <td colspan="4">
+            □<span style="color:#0033CC;font-weight:bold;">★</span>檢驗停留點 （□<span style="color:#CC0000;font-weight:bold;">※</span>安衛查驗點）  □不定期抽查
+          </td>
+        </tr>
+        <tr>
+          <td colspan="3" style="font-weight:bold;">施工流程</td>
+          <td colspan="4">□施工前  □施工中檢查  □施工完成檢查</td>
+        </tr>
+        <tr>
+          <td colspan="3" style="font-weight:bold;">抽查結果</td>
+          <td colspan="4">○抽查合格   ╳有缺失需改正   ／無此抽查項目</td>
+        </tr>
+        ${showProofRow ? `
+        <tr>
+          <td colspan="3" style="font-weight:bold;">施工作業應提出證明文件記錄</td>
+          <td>${escapeHtml(proofDocText)}</td>
+          <td colspan="3">□齊全<br/>□不齊全</td>
+        </tr>
+        ` : ''}
+        <tr style="font-weight:bold; text-align:center; background:#f8fafc;">
+          <td colspan="3" rowspan="2" align="center" style="text-align:center;">
+            管理項目<br/>（<span style="color:#0033CC;">★</span>檢驗停留點／<br/><span style="color:#CC0000;">※</span>安衛查驗點）
+          </td>
+          <td rowspan="2" align="center" style="text-align:center;">抽查標準<br/>（定量定性）</td>
+          <td rowspan="2" align="center" style="text-align:center;">實際抽查情形<br/>（敘述抽查值）</td>
+          <td rowspan="2" align="center" style="text-align:center;">抽查<br/>結果</td>
+          <td align="center" style="text-align:center; height:18pt;">備註</td>
+        </tr>
+        <tr style="font-weight:bold; text-align:center; background:#f8fafc;">
+          <td align="center" style="text-align:center; font-size:9.5pt;">抽查人簽名<br/><span style="font-size:8pt; font-weight:normal;">(加註日期/時間)</span></td>
+        </tr>
+        ${bodyTrs}
+        ${safetyBottomHtml}
+        ${defectBottomHtml}
+      </table>
+      ${bottomSignatureHtml}
+    `;
+  }
+
+  function renderChecklistPreview() {
+    document.getElementById('checklistPreviewPaper').innerHTML = generateChecklistTableHtml();
+  }
+
+  // ==================== 施工流程圖 (Word 標準邊界：上下 2.54cm / 左右 3.18cm) ====================
+  function getMappedFlowData() {
+    const phaseWeights = { 'pre': 1, 'mid': 2, 'post': 3 };
+    const sortedFlows = [...appData].sort((a, b) => {
+      const wA = phaseWeights[a.phase || 'mid'] || 2;
+      const wB = phaseWeights[b.phase || 'mid'] || 2;
+      return wA - wB;
+    });
+
+    return sortedFlows.map(f => ({
+      id: f.id,
+      text: f.flowName || '未命名工項',
+      isStopPoint: f.mgmtItems.some(m => m.isStopPoint),
+      isSafetyPoint: f.isSafetyPoint,
+      phase: f.phase || 'mid'
+    }));
+  }
+
+  function wrapFormLines(text, maxChars) {
+    if (!text) return [];
+    const rawLines = text.split(/\r?\n/);
+    const wrapped = [];
+    rawLines.forEach(line => {
+      let rem = line.trim();
+      while (rem.length > maxChars) {
+        wrapped.push(rem.substring(0, maxChars));
+        rem = rem.substring(maxChars);
+      }
+      if (rem) wrapped.push(rem);
+    });
+    return wrapped;
+  }
+
+  function getAutoFormsData(maxCharsPerLine = 12) {
+    const blueForm = document.getElementById('chkFormTitleInput').value.trim();
+    const blueList = blueForm ? wrapFormLines(blueForm, maxCharsPerLine) : [];
+    const redRaw = [];
+    appData.forEach(f => {
+      if (f.isSafetyPoint) {
+        getSafetyNamesByIds(f.safetyFormIds).forEach(sfName => {
+          if (sfName && !redRaw.includes(sfName)) redRaw.push(sfName);
+        });
+      }
+    });
+    const redList = [];
+    redRaw.forEach(r => {
+      wrapFormLines(r, maxCharsPerLine).forEach(w => redList.push(w));
+    });
+    return { blueList, redList, hasForms: (blueList.length > 0 || redList.length > 0) };
+  }
+
+  function updateFlowBreakDropdown() {
+    const sel = document.getElementById('flowBreakSelect');
+    if (!sel) return;
+    const flowData = getMappedFlowData();
+    const midItems = flowData.filter(d => d.phase === 'mid');
+    let html = `<option value="">單欄直式 (不換欄)</option>`;
+    midItems.forEach(item => {
+      const globalIdx = flowData.findIndex(x => x.id === item.id);
+      if (globalIdx < flowData.length - 1) {
+        const selected = String(splitTaskId) === String(item.id) ? 'selected' : '';
+        html += `<option value="${item.id}" ${selected}>於【施工中：${escapeHtml(item.text)}】後換至右欄</option>`;
+      }
+    });
+    sel.innerHTML = html;
+  }
+
+  function changeFlowBreak(val) {
+    splitTaskId = val ? val : null;
+    updateDiagram();
+    saveStateToLocalStorage();
+  }
+
+  function adjustFlowParam(type, delta) {
+    if (type === 'width') nodeWidth = Math.max(100, Math.min(200, nodeWidth + delta));
+    else if (type === 'height') nodeHeight = Math.max(28, Math.min(60, nodeHeight + delta));
+    else if (type === 'font') fontSizePt = Math.max(8, Math.min(15, fontSizePt + delta));
+    else if (type === 'gap') verticalGap = Math.max(14, Math.min(46, verticalGap + delta));
+
+    document.getElementById('valWidth').textContent = nodeWidth + 'pt';
+    document.getElementById('valHeight').textContent = nodeHeight + 'pt';
+    document.getElementById('valFont').textContent = fontSizePt + 'pt';
+    document.getElementById('valGap').textContent = verticalGap + 'pt';
+    updateDiagram();
+    saveStateToLocalStorage();
+  }
+
+  function toggleFlowPhases(checked) {
+    enablePhases = checked;
+    updateDiagram();
+    saveStateToLocalStorage();
+  }
+  function toggleFlowLegend(checked) {
+    enableLegend = checked;
+    updateDiagram();
+    saveStateToLocalStorage();
+  }
+
+  function formatNodeLines(text) {
+    if (!text) return [""];
+    const maxCharsPerLine = Math.max(6, Math.floor(nodeWidth / 14.5));
+    const sections = text.split(/\r?\n/);
+    const resultLines = [];
+    sections.forEach(sec => {
+      let remaining = sec.trim();
+      if (remaining.length <= maxCharsPerLine) {
+        resultLines.push(remaining);
+      } else {
+        while (remaining.length > maxCharsPerLine) {
+          let cutIdx = -1;
+          for (let i = maxCharsPerLine; i >= 4; i--) {
+            if (['、', '，', ',', ' ', '/', '及', '與'].includes(remaining[i])) {
+              cutIdx = i + 1; break;
+            }
+          }
+          if (cutIdx === -1) cutIdx = maxCharsPerLine;
+          resultLines.push(remaining.substring(0, cutIdx).trim());
+          remaining = remaining.substring(cutIdx).trim();
+        }
+        if (remaining.length > 0) resultLines.push(remaining);
+      }
+    });
+    return resultLines;
+  }
+
+  function buildGeometryModel() {
+    const sorted = getMappedFlowData();
+    const breakIndex = splitTaskId ? sorted.findIndex(d => String(d.id) === String(splitTaskId)) : -1;
+    const isDoubleCol = (breakIndex !== -1 && breakIndex < sorted.length - 1);
+    const renderPhases = enablePhases;
+    const flowHeaderTitle = document.getElementById('flowTitleInput').value.trim();
+
+    let startW = Math.round(nodeWidth * 0.8);
+    if (startW % 2 !== 0) startW += 1;
+    let diaW = Math.round(nodeWidth * 0.94);
+    if (diaW % 2 !== 0) diaW += 1;
+    let diaH = Math.round(nodeHeight * 1.15);
+    if (diaH % 2 !== 0) diaH += 1;
+
+    const lineH = Math.round(fontSizePt * 1.38);
+    const lineSpacingWord = Math.round(fontSizePt * 1.25);
+
+    const nodes = [];
+    const arrows = [];
+    const loopbacks = [];
+    const phaseDividers = [];
+    const phaseLabels = [];
+
+    const V_LINE_X = 32;
+    const PHASE_TEXT_X = 14;
+    const TOP_START_Y = 12 + HEADER_TITLE_OFFSET;
+
+    if (!isDoubleCol) {
+      const LOOP_X = renderPhases ? 70 : 38;
+      const CX = renderPhases ? (LOOP_X + 24 + Math.round(nodeWidth / 2)) : Math.round(38 + 22 + nodeWidth / 2);
+      const FORMS_X = CX + Math.round(nodeWidth / 2) + 14;
+      const formsWidth = Math.max(115, SAFE_BOX_W_PT - FORMS_X - 4);
+      const maxFormChars = Math.max(8, Math.floor(formsWidth / (fontSizePt + 1.2)));
+
+      let currentY = TOP_START_Y;
+      nodes.push({ type: 'start', lines: ['開始'], x: Math.round(CX - startW / 2), y: currentY, w: startW, h: START_END_HEIGHT });
+      currentY += START_END_HEIGHT;
+
+      let prevAnchor = { x: CX, y: currentY };
+      let pendingPass = false;
+      let firstTaskAnchorY = null;
+
+      const phaseBounds = {
+        'pre': { minY: renderPhases ? TOP_START_Y : 9999, maxY: renderPhases ? (TOP_START_Y + START_END_HEIGHT) : -9999, has: renderPhases },
+        'mid': { minY: 9999, maxY: -9999, has: false },
+        'post': { minY: 9999, maxY: -9999, has: false }
+      };
+
+      let prevPh = 'pre';
+
+      sorted.forEach((item, idx) => {
+        const ph = item.phase || 'mid';
+        phaseBounds[ph].has = true;
+        const currentArrowGap = pendingPass ? PASS_VERTICAL_GAP : verticalGap;
+        currentY += currentArrowGap;
+        if (idx === 0) firstTaskAnchorY = currentY;
+
+        arrows.push({ x1: prevAnchor.x, y1: prevAnchor.y, x2: CX, y2: currentY, hasPass: pendingPass });
+
+        if (renderPhases && prevPh !== ph) {
+          const divY = Math.round((prevAnchor.y + currentY) / 2);
+          phaseDividers.push({ y: divY, x1: 4, x2: CX + Math.round(nodeWidth / 2) + 12 });
+        }
+        prevPh = ph;
+        pendingPass = false;
+
+        const lines = formatNodeLines(item.text);
+        let h = Math.max(nodeHeight, Math.round(nodeHeight * 0.5) + lines.length * lineH);
+        if (h % 2 !== 0) h += 1;
+
+        const taskNode = {
+          type: 'task', lines, isSafety: item.isSafetyPoint,
+          x: Math.round(CX - nodeWidth / 2), y: currentY, w: nodeWidth, h,
+          leftAnchor: { x: Math.round(CX - nodeWidth / 2), y: Math.round(currentY + h / 2) }
+        };
+        nodes.push(taskNode);
+
+        phaseBounds[ph].minY = Math.min(phaseBounds[ph].minY, currentY);
+        currentY += h;
+        phaseBounds[ph].maxY = Math.max(phaseBounds[ph].maxY, currentY);
+        prevAnchor = { x: CX, y: currentY };
+
+        if (item.isStopPoint) {
+          currentY += verticalGap;
+          arrows.push({ x1: prevAnchor.x, y1: prevAnchor.y, x2: CX, y2: currentY, hasPass: false });
+          const diamondNode = {
+            type: 'diamond', x: Math.round(CX - diaW / 2), y: currentY, w: diaW, h: diaH,
+            leftTip: { x: Math.round(CX - diaW / 2), y: Math.round(currentY + diaH / 2) }
+          };
+          nodes.push(diamondNode);
+          loopbacks.push({ from: diamondNode.leftTip, to: taskNode.leftAnchor, loopX: LOOP_X });
+          currentY += diaH;
+          phaseBounds[ph].maxY = Math.max(phaseBounds[ph].maxY, currentY);
+          prevAnchor = { x: CX, y: currentY };
+          pendingPass = true;
+        }
+      });
+
+      const finalArrowGap = pendingPass ? PASS_VERTICAL_GAP : verticalGap;
+      currentY += finalArrowGap;
+      arrows.push({ x1: prevAnchor.x, y1: prevAnchor.y, x2: CX, y2: currentY, hasPass: pendingPass });
+
+      if (renderPhases && prevPh !== 'post') {
+        const divY = Math.round((prevAnchor.y + currentY) / 2);
+        phaseDividers.push({ y: divY, x1: 4, x2: CX + Math.round(nodeWidth / 2) + 12 });
+      }
+
+      nodes.push({ type: 'end', lines: ['完成'], x: Math.round(CX - startW / 2), y: currentY, w: startW, h: START_END_HEIGHT });
+
+      if (renderPhases) {
+        phaseBounds['post'].has = true;
+        if (phaseBounds['post'].minY > 9000) phaseBounds['post'].minY = currentY;
+        phaseBounds['post'].maxY = currentY + START_END_HEIGHT;
+      }
+      currentY += START_END_HEIGHT;
+
+      if (renderPhases) {
+        [{ key: 'pre', text: '施工前' }, { key: 'mid', text: '施工中' }, { key: 'post', text: '施工後' }].forEach(stg => {
+          const b = phaseBounds[stg.key];
+          if (b.has && b.minY < 9000) {
+            phaseLabels.push({ text: stg.text, x: PHASE_TEXT_X, y: Math.round((b.minY + b.maxY) / 2) });
+          }
+        });
+      }
+
+      const forms = getAutoFormsData(maxFormChars);
+      const formsY = firstTaskAnchorY ? (firstTaskAnchorY + 6) : Math.round(currentY * 0.3);
+
+      let formsEstH = forms.hasForms ? ((forms.blueList.length + forms.redList.length) * Math.round(fontSizePt * 1.45) + Math.round(fontSizePt * 1.8) + 12) : 0;
+      let contentBottom = forms.hasForms ? Math.max(currentY, formsY + formsEstH) : currentY;
+
+      let legendY = 0, legendH = 0, legendX = 8, legendWidth = LEGEND_BOX_WIDTH;
+      let totalH = contentBottom + 16;
+      if (enableLegend) {
+        legendY = contentBottom + 14;
+        legendH = Math.max(135, Math.round(fontSizePt * 13));
+        totalH = legendY + legendH + 12;
+      }
+
+      const maxUsedX = Math.max(
+        CX + Math.round(nodeWidth / 2),
+        forms.hasForms ? (FORMS_X + formsWidth) : 0,
+        enableLegend ? (legendX + legendWidth) : 0
+      );
+
+      return {
+        flowHeaderTitle, headerCenterX: Math.round(SAFE_BOX_W_PT / 2),
+        isDoubleCol: false, renderPhases, nodes, arrows, loopbacks, phaseDividers, phaseLabels,
+        verticalLine: renderPhases ? { x: V_LINE_X, y1: TOP_START_Y - 6, y2: currentY + 4 } : null,
+        canvasWidth: Math.max(SAFE_BOX_W_PT, maxUsedX),
+        maxUsedX,
+        totalHeight: totalH, formsY, formsX: FORMS_X, formsWidth, maxFormChars,
+        legendX, legendY, legendWidth, legendH, lineH, lineSpacingWord
+      };
+    } else {
+      const LOOP_X1 = 62;
+      const CX1 = LOOP_X1 + 20 + Math.round(nodeWidth / 2);
+      const LOOP_X2 = CX1 + Math.round(nodeWidth / 2) + 22;
+      const CX2 = LOOP_X2 + 20 + Math.round(nodeWidth / 2);
+      const rightEdgeX = CX2 + Math.round(nodeWidth / 2);
+
+      const FORMS_X = CX1 + Math.round(nodeWidth / 2) + 12;
+      const formsWidth = Math.max(120, Math.max(SAFE_BOX_W_PT, rightEdgeX) - FORMS_X - 4);
+      const maxFormChars = Math.max(8, Math.floor(formsWidth / (fontSizePt + 1.2)));
+      const forms = getAutoFormsData(maxFormChars);
+      const formsY = TOP_START_Y + 2;
+      let formsEstH = forms.hasForms ? ((forms.blueList.length + forms.redList.length) * Math.round(fontSizePt * 1.45) + Math.round(fontSizePt * 1.8) + 8) : 0;
+
+      let y1 = TOP_START_Y;
+      nodes.push({ type: 'start', lines: ['開始'], x: Math.round(CX1 - startW / 2), y: y1, w: startW, h: START_END_HEIGHT });
+      y1 += START_END_HEIGHT;
+
+      let prevAnchor1 = { x: CX1, y: y1 };
+      let pendingPass1 = false;
+      let div1Y = null;
+      let prevPh1 = 'pre';
+
+      for (let i = 0; i <= breakIndex; i++) {
+        const item = sorted[i];
+        const ph = item.phase || 'mid';
+        const currentArrowGap = pendingPass1 ? PASS_VERTICAL_GAP : verticalGap;
+        y1 += currentArrowGap;
+        arrows.push({ x1: prevAnchor1.x, y1: prevAnchor1.y, x2: CX1, y2: y1, hasPass: pendingPass1 });
+        if (renderPhases && div1Y === null && prevPh1 === 'pre' && ph === 'mid') {
+          div1Y = Math.round((prevAnchor1.y + y1) / 2);
+        }
+        prevPh1 = ph;
+        pendingPass1 = false;
+
+        const lines = formatNodeLines(item.text);
+        let h = Math.max(nodeHeight, Math.round(nodeHeight * 0.5) + lines.length * lineH);
+        if (h % 2 !== 0) h += 1;
+
+        const taskNode = {
+          type: 'task', lines, isSafety: item.isSafetyPoint,
+          x: Math.round(CX1 - nodeWidth / 2), y: y1, w: nodeWidth, h,
+          leftAnchor: { x: Math.round(CX1 - nodeWidth / 2), y: Math.round(y1 + h / 2) }
+        };
+        nodes.push(taskNode);
+        y1 += h;
+        prevAnchor1 = { x: CX1, y: y1 };
+
+        if (item.isStopPoint) {
+          y1 += verticalGap;
+          arrows.push({ x1: prevAnchor1.x, y1: prevAnchor1.y, x2: CX1, y2: y1, hasPass: false });
+          const diamondNode = {
+            type: 'diamond', x: Math.round(CX1 - diaW / 2), y: y1, w: diaW, h: diaH,
+            leftTip: { x: Math.round(CX1 - diaW / 2), y: Math.round(y1 + diaH / 2) }
+          };
+          nodes.push(diamondNode);
+          loopbacks.push({ from: diamondNode.leftTip, to: taskNode.leftAnchor, loopX: LOOP_X1 });
+          y1 += diaH;
+          prevAnchor1 = { x: CX1, y: y1 };
+          pendingPass1 = true;
+        }
+      }
+
+      const outArrowGap = pendingPass1 ? PASS_VERTICAL_GAP : verticalGap;
+      y1 += outArrowGap;
+      arrows.push({ x1: prevAnchor1.x, y1: prevAnchor1.y, x2: CX1, y2: y1, hasPass: pendingPass1 });
+      nodes.push({ type: 'circle', cx: CX1, cy: y1 + CIRCLE_RADIUS, r: CIRCLE_RADIUS });
+      y1 += CIRCLE_RADIUS * 2;
+      const leftMidEndY = y1;
+
+      const safeDiv1 = Math.max(div1Y || (TOP_START_Y + START_END_HEIGHT + 10), formsY + formsEstH + 4);
+      const circleInTopY = safeDiv1 + 12;
+      nodes.push({ type: 'circle', cx: CX2, cy: circleInTopY + CIRCLE_RADIUS, r: CIRCLE_RADIUS });
+
+      let y2 = circleInTopY + CIRCLE_RADIUS * 2;
+      let prevAnchor2 = { x: CX2, y: y2 };
+      let pendingPass2 = false;
+
+      let rightMidTaskCount = 0;
+      for (let i = breakIndex + 1; i < sorted.length; i++) {
+        const item = sorted[i];
+        if ((item.phase || 'mid') !== 'mid') break;
+        rightMidTaskCount++;
+        const currentArrowGap = pendingPass2 ? PASS_VERTICAL_GAP : verticalGap;
+        y2 += currentArrowGap;
+        arrows.push({ x1: prevAnchor2.x, y1: prevAnchor2.y, x2: CX2, y2: y2, hasPass: pendingPass2 });
+        pendingPass2 = false;
+
+        const lines = formatNodeLines(item.text);
+        let h = Math.max(nodeHeight, Math.round(nodeHeight * 0.5) + lines.length * lineH);
+        if (h % 2 !== 0) h += 1;
+
+        const taskNode = {
+          type: 'task', lines, isSafety: item.isSafetyPoint,
+          x: Math.round(CX2 - nodeWidth / 2), y: y2, w: nodeWidth, h,
+          leftAnchor: { x: Math.round(CX2 - nodeWidth / 2), y: Math.round(y2 + h / 2) }
+        };
+        nodes.push(taskNode);
+        y2 += h;
+        prevAnchor2 = { x: CX2, y: y2 };
+
+        if (item.isStopPoint) {
+          y2 += verticalGap;
+          arrows.push({ x1: prevAnchor2.x, y1: prevAnchor2.y, x2: CX2, y2: y2, hasPass: false });
+          const diamondNode = {
+            type: 'diamond', x: Math.round(CX2 - diaW / 2), y: y2, w: diaW, h: diaH,
+            leftTip: { x: Math.round(CX2 - diaW / 2), y: Math.round(y2 + diaH / 2) }
+          };
+          nodes.push(diamondNode);
+          loopbacks.push({ from: diamondNode.leftTip, to: taskNode.leftAnchor, loopX: LOOP_X2 });
+          y2 += diaH;
+          prevAnchor2 = { x: CX2, y: y2 };
+          pendingPass2 = true;
+        }
+      }
+
+      const maxMidEndY = Math.max(leftMidEndY, y2);
+      const div2Y = maxMidEndY + 14;
+      const DIVIDER_LINE_W = Math.max(SAFE_BOX_W_PT - 4, rightEdgeX);
+      if (renderPhases) {
+        if (div1Y !== null) phaseDividers.push({ y: div1Y, x1: 4, x2: DIVIDER_LINE_W });
+        phaseDividers.push({ y: div2Y, x1: 4, x2: DIVIDER_LINE_W });
+      }
+      y2 = Math.max(y2, div2Y);
+
+      for (let i = breakIndex + 1 + rightMidTaskCount; i < sorted.length; i++) {
+        const item = sorted[i];
+        const currentArrowGap = pendingPass2 ? PASS_VERTICAL_GAP : verticalGap;
+        y2 += currentArrowGap;
+        arrows.push({ x1: prevAnchor2.x, y1: prevAnchor2.y, x2: CX2, y2: y2, hasPass: pendingPass2 });
+        pendingPass2 = false;
+
+        const lines = formatNodeLines(item.text);
+        let h = Math.max(nodeHeight, Math.round(nodeHeight * 0.5) + lines.length * lineH);
+        if (h % 2 !== 0) h += 1;
+
+        const taskNode = {
+          type: 'task', lines, isSafety: item.isSafetyPoint,
+          x: Math.round(CX2 - nodeWidth / 2), y: y2, w: nodeWidth, h,
+          leftAnchor: { x: Math.round(CX2 - nodeWidth / 2), y: Math.round(y2 + h / 2) }
+        };
+        nodes.push(taskNode);
+        y2 += h;
+        prevAnchor2 = { x: CX2, y: y2 };
+
+        if (item.isStopPoint) {
+          y2 += verticalGap;
+          arrows.push({ x1: prevAnchor2.x, y1: prevAnchor2.y, x2: CX2, y2: y2, hasPass: false });
+          const diamondNode = {
+            type: 'diamond', x: Math.round(CX2 - diaW / 2), y: y2, w: diaW, h: diaH,
+            leftTip: { x: Math.round(CX2 - diaW / 2), y: Math.round(y2 + diaH / 2) }
+          };
+          nodes.push(diamondNode);
+          loopbacks.push({ from: diamondNode.leftTip, to: taskNode.leftAnchor, loopX: LOOP_X2 });
+          y2 += diaH;
+          prevAnchor2 = { x: CX2, y: y2 };
+          pendingPass2 = true;
+        }
+      }
+
+      const endArrowGap = pendingPass2 ? PASS_VERTICAL_GAP : verticalGap;
+      y2 += endArrowGap;
+      arrows.push({ x1: prevAnchor2.x, y1: prevAnchor2.y, x2: CX2, y2: y2, hasPass: pendingPass2 });
+      nodes.push({ type: 'end', lines: ['完成'], x: Math.round(CX2 - startW / 2), y: y2, w: startW, h: START_END_HEIGHT });
+      y2 += START_END_HEIGHT;
+
+      if (renderPhases) {
+        if (div1Y !== null) {
+          phaseLabels.push({ text: '施工前', x: PHASE_TEXT_X, y: Math.round((TOP_START_Y + div1Y) / 2) });
+          phaseLabels.push({ text: '施工中', x: PHASE_TEXT_X, y: Math.round((div1Y + div2Y) / 2) });
+        } else {
+          phaseLabels.push({ text: '施工中', x: PHASE_TEXT_X, y: Math.round((TOP_START_Y + div2Y) / 2) });
+        }
+        phaseLabels.push({ text: '施工後', x: PHASE_TEXT_X, y: Math.round((div2Y + y2) / 2) });
+      }
+
+      let contentBottom = Math.max(y1, y2);
+      let legendY = 0, legendH = 0, legendX = 8, legendWidth = LEGEND_BOX_WIDTH;
+      let totalH = contentBottom + 16;
+      if (enableLegend) {
+        legendY = contentBottom + 14;
+        legendH = Math.max(135, Math.round(fontSizePt * 13));
+        totalH = legendY + legendH + 12;
+      }
+
+      const maxUsedX = Math.max(rightEdgeX, enableLegend ? (legendX + legendWidth) : 0);
+
+      return {
+        flowHeaderTitle, headerCenterX: Math.round(Math.max(SAFE_BOX_W_PT, rightEdgeX) / 2),
+        isDoubleCol: true, renderPhases, nodes, arrows, loopbacks, phaseDividers, phaseLabels,
+        verticalLine: renderPhases ? { x: V_LINE_X, y1: TOP_START_Y - 6, y2: Math.max(y1, y2) + 4 } : null,
+        canvasWidth: Math.max(SAFE_BOX_W_PT, maxUsedX),
+        maxUsedX,
+        totalHeight: totalH, formsY, formsX: FORMS_X, formsWidth, maxFormChars,
+        legendX, legendY, legendWidth, legendH, lineH, lineSpacingWord
+      };
+    }
+  }
+
+  function updateDiagram() {
+    const geo = buildGeometryModel();
+    const forms = getAutoFormsData(geo.maxFormChars);
+    const svg = document.getElementById('svgPreview');
+
+    const svgTotalPageH = Math.max(A4_PAGE_H_PT, MARGIN_TOP_PT + geo.totalHeight + 35);
+    svg.setAttribute('viewBox', `0 0 ${A4_PAGE_W_PT} ${svgTotalPageH}`);
+
+    const isHeightOverflow = geo.totalHeight > SAFE_BOX_H_PT;
+    const isWidthOverflow = geo.maxUsedX > SAFE_BOX_W_PT;
+    const alertBox = document.getElementById('flowPageStatusAlert');
+
+    if (alertBox) {
+      if (isHeightOverflow || isWidthOverflow) {
+        alertBox.style.background = '#fef2f2';
+        alertBox.style.border = '1.5px solid #fca5a5';
+        alertBox.style.color = '#b91c1c';
+        const reasons = [];
+        if (isHeightOverflow) reasons.push(`高度 ${geo.totalHeight}pt 超過標準邊界上限 ${SAFE_BOX_H_PT}pt (請設換欄斷點或縮小箭頭/高度)`);
+        if (isWidthOverflow) reasons.push(`寬度 ${geo.maxUsedX}pt 超過標準邊界上限 ${SAFE_BOX_W_PT}pt (請將圖塊寬度調小)`);
+        alertBox.innerHTML = `⚠️ 超出 Word 標準邊界範圍：${reasons.join('；')}！`;
+      } else {
+        alertBox.style.background = '#dcfce7';
+        alertBox.style.border = '1.5px solid #86efac';
+        alertBox.style.color = '#166534';
+        alertBox.innerHTML = `✅ 完全符合 Word 標準邊界（上下 2.54cm、左右 3.18cm）：目前圖表寬 ${geo.maxUsedX}pt / ${SAFE_BOX_W_PT}pt、高 ${geo.totalHeight}pt / ${SAFE_BOX_H_PT}pt，貼入 Word 絕不跑版跨頁！`;
+      }
+    }
+
+    let innerContent = '';
+
+    if (geo.flowHeaderTitle) {
+      innerContent += `<text x="${geo.headerCenterX}" y="22" font-size="${fontSizePt + 5}" font-weight="bold" fill="#0033CC" font-family="'標楷體', 'DFKai-SB', serif" text-anchor="middle">${escapeHtml(geo.flowHeaderTitle)}</text>`;
+    }
+
+    if (geo.verticalLine) {
+      innerContent += `<line x1="${geo.verticalLine.x}" y1="${geo.verticalLine.y1}" x2="${geo.verticalLine.x}" y2="${geo.verticalLine.y2}" stroke="#888888" stroke-width="1.2" stroke-dasharray="4,4" />`;
+    }
+    geo.phaseDividers.forEach(d => {
+      innerContent += `<line x1="${d.x1}" y1="${d.y}" x2="${d.x2}" y2="${d.y}" stroke="#888888" stroke-width="1.2" stroke-dasharray="4,4" />`;
+    });
+    geo.phaseLabels.forEach(p => {
+      const chars = p.text.split('');
+      const charGap = fontSizePt * 1.45;
+      const startY = p.y - ((chars.length - 1) * charGap) / 2;
+      chars.forEach((c, i) => {
+        innerContent += `<text x="${p.x}" y="${startY + i * charGap}" font-size="${fontSizePt + 2}" font-weight="bold" fill="#000000" font-family="'標楷體', 'DFKai-SB', serif" text-anchor="middle">${c}</text>`;
+      });
+    });
+
+    geo.arrows.forEach(a => {
+      innerContent += `<line x1="${a.x1}" y1="${a.y1}" x2="${a.x2}" y2="${a.y2}" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)" />`;
+      if (a.hasPass) {
+        const midY = Math.round((a.y1 + a.y2) / 2);
+        innerContent += `<text x="${a.x1 + 6}" y="${midY + 4}" font-size="${fontSizePt + 2}" font-weight="bold" fill="#000000" font-family="'標楷體', 'DFKai-SB', serif" text-anchor="start">合格</text>`;
+      }
+    });
+
+    geo.loopbacks.forEach(l => {
+      const midY = Math.round((l.from.y + l.to.y) / 2);
+      innerContent += `
+        <path d="M ${l.from.x} ${l.from.y} L ${l.loopX} ${l.from.y} L ${l.loopX} ${l.to.y} L ${l.to.x} ${l.to.y}" 
+              fill="none" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)" />
+        <text x="${l.loopX - 10}" y="${midY - 13}" font-size="${fontSizePt + 2}" font-weight="bold" fill="#000000" font-family="'標楷體', 'DFKai-SB', serif" text-anchor="middle">不</text>
+        <text x="${l.loopX - 10}" y="${midY + 1}" font-size="${fontSizePt + 2}" font-weight="bold" fill="#000000" font-family="'標楷體', 'DFKai-SB', serif" text-anchor="middle">合</text>
+        <text x="${l.loopX - 10}" y="${midY + 15}" font-size="${fontSizePt + 2}" font-weight="bold" fill="#000000" font-family="'標楷體', 'DFKai-SB', serif" text-anchor="middle">格</text>
+      `;
+    });
+
+    geo.nodes.forEach(n => {
+      if (n.type === 'start' || n.type === 'end') {
+        innerContent += `
+          <rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="${Math.round(n.h/2)}" ry="${Math.round(n.h/2)}" fill="#FFFFFF" stroke="#000000" stroke-width="1.2" />
+          <text x="${Math.round(n.x + n.w/2)}" y="${n.y + n.h/2 + fontSizePt * 0.35}" font-size="${fontSizePt + 2}" font-weight="bold" fill="#000000" font-family="'標楷體', 'DFKai-SB', serif" text-anchor="middle">${escapeHtml(n.lines[0])}</text>
+        `;
+      } else if (n.type === 'circle') {
+        innerContent += `<circle cx="${n.cx}" cy="${n.cy}" r="${n.r}" fill="#FFFFFF" stroke="#000000" stroke-width="1.2" />`;
+      } else if (n.type === 'task') {
+        const totalTextH = (n.lines.length - 1) * geo.lineH;
+        const startY = Math.round(n.y + n.h / 2 - totalTextH / 2 + fontSizePt * 0.35);
+        innerContent += `
+          <rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" fill="#FFFFFF" stroke="#000000" stroke-width="1.2" />
+          <text font-size="${fontSizePt + 2}" font-weight="bold" fill="#000000" font-family="'標楷體', 'DFKai-SB', serif" text-anchor="middle">
+            ${n.lines.map((l, i) => {
+              const prefix = (i === 0 && n.isSafety) ? '<tspan fill="#CC0000" font-weight="bold">※ </tspan>' : '';
+              return `<tspan x="${Math.round(n.x + n.w/2)}" y="${startY + i * geo.lineH}">${prefix}${escapeHtml(l)}</tspan>`;
+            }).join('')}
+          </text>
+        `;
+      } else if (n.type === 'diamond') {
+        const pts = `${Math.round(n.x + n.w/2)},${n.y} ${Math.round(n.x + n.w)},${Math.round(n.y + n.h/2)} ${Math.round(n.x + n.w/2)},${Math.round(n.y + n.h)} ${n.x},${Math.round(n.y + n.h/2)}`;
+        innerContent += `
+          <polygon points="${pts}" fill="#FFFFFF" stroke="#000000" stroke-width="1.2" />
+          <text x="${Math.round(n.x + n.w/2)}" y="${Math.round(n.y + n.h/2 + fontSizePt * 0.35)}" font-size="${fontSizePt + 2}" font-weight="bold" fill="#000000" font-family="'標楷體', 'DFKai-SB', serif" text-anchor="middle">
+            <tspan fill="#0033CC">★</tspan> 查驗
+          </text>
+        `;
+      }
+    });
+
+    if (forms.hasForms) {
+      let curFormY = geo.formsY;
+      innerContent += `<text x="${geo.formsX}" y="${curFormY}" font-size="${fontSizePt + 1}" font-weight="bold" fill="#000000" font-family="'標楷體', 'DFKai-SB', serif">使用表單：</text>`;
+      curFormY += Math.round(fontSizePt * 1.45);
+      forms.blueList.forEach(line => {
+        innerContent += `<text x="${geo.formsX}" y="${curFormY}" font-size="${fontSizePt + 1}" font-weight="bold" fill="#0033CC" font-family="'標楷體', 'DFKai-SB', serif">${escapeHtml(line)}</text>`;
+        curFormY += Math.round(fontSizePt * 1.4);
+      });
+      curFormY += 2;
+      forms.redList.forEach(line => {
+        innerContent += `<text x="${geo.formsX}" y="${curFormY}" font-size="${fontSizePt + 1}" font-weight="bold" fill="#CC0000" font-family="'標楷體', 'DFKai-SB', serif">${escapeHtml(line)}</text>`;
+        curFormY += Math.round(fontSizePt * 1.4);
+      });
+    }
+
+    if (enableLegend && geo.legendY > 0) {
+      innerContent += `
+        <foreignObject x="${geo.legendX}" y="${geo.legendY}" width="${geo.legendWidth}" height="${geo.legendH}">
+          <div xmlns="http://www.w3.org/1999/xhtml" style="font-family:'標楷體','DFKai-SB',serif; font-size:${fontSizePt + 1}px; line-height:1.42; color:#000000; text-align:justify;">
+            <div style="margin-bottom:4px; font-weight:bold;">
+              備註：<span style="color:#0033CC;">★</span> 施工檢驗停留點&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#CC0000;">※</span> 安全衛生查驗點
+            </div>
+            <div style="margin-bottom:4px; padding-left:1.5em; text-indent:-1.5em;">
+              1. 施工檢驗停留點應於廠商完成自主檢查並提出施工抽查申請後辦理；於圖中未標示為施工檢驗停留點，為監造單位之不定期查驗點。
+            </div>
+            <div style="padding-left:1.5em; text-indent:-1.5em;">
+              2. 安全衛生查驗點應於廠商完成安全衛生檢查並提出施工抽查申請後辦理；屬施工安全監造現場一般項目者，進行一般施工安全衛生抽查，若屬施工安全監造現場特定(專屬)項目者，則需進行特定項目(查驗項目內容/判定基準)施工安全衛生抽查。
+            </div>
+          </div>
+        </foreignObject>
+      `;
+    }
+
+    svg.innerHTML = `
+      <defs>
+        <marker id="arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+          <polygon points="0 0, 7 3.5, 0 7" fill="#000000" />
+        </marker>
+      </defs>
+
+      <text x="${A4_PAGE_W_PT / 2}" y="22" font-size="9.5" font-weight="bold" fill="#94a3b8" text-anchor="middle">▲ 上邊界 2.54 公分 (72pt)</text>
+      <text x="45" y="${MARGIN_TOP_PT + SAFE_BOX_H_PT / 2}" font-size="9" font-weight="bold" fill="#94a3b8" text-anchor="middle">◀ 左 3.18cm</text>
+      <text x="${A4_PAGE_W_PT - 45}" y="${MARGIN_TOP_PT + SAFE_BOX_H_PT / 2}" font-size="9" font-weight="bold" fill="#94a3b8" text-anchor="middle">右 3.18cm ▶</text>
+
+      <rect x="${MARGIN_LEFT_PT}" y="${MARGIN_TOP_PT}" width="${SAFE_BOX_W_PT}" height="${SAFE_BOX_H_PT}"
+            fill="none" stroke="#dc2626" stroke-width="1.4" stroke-dasharray="6,4" />
+      <rect x="${MARGIN_LEFT_PT}" y="${MARGIN_TOP_PT - 16}" width="265" height="15" rx="3" fill="#fef2f2" stroke="#fca5a5" />
+      <text x="${MARGIN_LEFT_PT + 6}" y="${MARGIN_TOP_PT - 5}" font-size="9" font-weight="bold" fill="#dc2626">📐 Word 標準邊界安全框 (寬 14.64cm × 高 24.62cm)</text>
+
+      <g transform="translate(${MARGIN_LEFT_PT}, ${MARGIN_TOP_PT})">
+        ${innerContent}
+      </g>
+    `;
+  }
+
+  function buildWordVmlHtml() {
+    const geo = buildGeometryModel();
+    const forms = getAutoFormsData(geo.maxFormChars);
+    let vml = '';
+
+    if (geo.flowHeaderTitle) {
+      vml += `
+        <v:rect style="position:absolute;left:${Math.max(0, geo.headerCenterX - 180)}pt;top:2pt;width:360pt;height:24pt;v-text-anchor:middle;" filled="f" stroked="f">
+          <v:textbox inset="0,0,0,0" style="v-text-anchor:middle;">
+            <p align="center" style="margin:0;padding:0;text-align:center;font-family:'標楷體','DFKai-SB';font-size:${fontSizePt + 4}pt;font-weight:bold;color:#0033CC;">
+              ${escapeHtml(geo.flowHeaderTitle)}
+            </p>
+          </v:textbox>
+        </v:rect>
+      `;
+    }
+
+    if (geo.verticalLine) {
+      vml += `<v:line from="${geo.verticalLine.x}pt,${geo.verticalLine.y1}pt" to="${geo.verticalLine.x}pt,${geo.verticalLine.y2}pt" style="position:absolute;" strokecolor="#888888" strokeweight="1pt"><v:stroke dashstyle="dash"></v:stroke></v:line>`;
+    }
+    geo.phaseDividers.forEach(d => {
+      vml += `<v:line from="${d.x1}pt,${d.y}pt" to="${d.x2}pt,${d.y}pt" style="position:absolute;" strokecolor="#888888" strokeweight="1pt"><v:stroke dashstyle="dash"></v:stroke></v:line>`;
+    });
+    geo.phaseLabels.forEach(p => {
+      const textHtml = p.text.split('').join('<br/>');
+      vml += `
+        <v:rect style="position:absolute;left:${p.x - 10}pt;top:${p.y - 24}pt;width:20pt;height:48pt;v-text-anchor:middle;" filled="f" stroked="f">
+          <v:textbox inset="0,0,0,0" style="v-text-anchor:middle;">
+            <p align="center" style="margin:0;padding:0;text-align:center;font-family:'標楷體','DFKai-SB';font-size:${fontSizePt}pt;font-weight:bold;color:#000000;mso-line-height-rule:exactly;line-height:${geo.lineSpacingWord}pt;">${textHtml}</p>
+          </v:textbox>
+        </v:rect>
+      `;
+    });
+
+    geo.arrows.forEach(a => {
+      vml += `<v:line from="${Math.round(a.x1)}pt,${Math.round(a.y1)}pt" to="${Math.round(a.x2)}pt,${Math.round(a.y2)}pt" style="position:absolute;" strokecolor="#000000" strokeweight="1.2pt" o:connectortype="straight"><v:stroke endarrow="classic"></v:stroke></v:line>`;
+      if (a.hasPass) {
+        const midY = Math.round((a.y1 + a.y2) / 2);
+        vml += `
+          <v:rect style="position:absolute;left:${Math.round(a.x1 + 5)}pt;top:${midY - 7}pt;width:34pt;height:16pt;v-text-anchor:middle;" filled="f" stroked="f">
+            <v:textbox inset="0,0,0,0" style="v-text-anchor:middle;">
+              <p align="left" style="margin:0;padding:0;text-align:left;font-family:'標楷體','DFKai-SB';font-size:${fontSizePt}pt;font-weight:bold;color:#000000;mso-line-height-rule:exactly;line-height:${geo.lineSpacingWord}pt;">合格</p>
+            </v:textbox>
+          </v:rect>
+        `;
+      }
+    });
+
+    geo.loopbacks.forEach(l => {
+      const midY = Math.round((l.from.y + l.to.y) / 2);
+      const pts = `${Math.round(l.from.x)}pt,${Math.round(l.from.y)}pt ${Math.round(l.loopX)}pt,${Math.round(l.from.y)}pt ${Math.round(l.loopX)}pt,${Math.round(l.to.y)}pt ${Math.round(l.to.x)}pt,${Math.round(l.to.y)}pt`;
+      vml += `
+        <v:polyline points="${pts}" style="position:absolute;" strokecolor="#000000" strokeweight="1.2pt" o:connectortype="elbow"><v:stroke endarrow="classic"></v:stroke></v:polyline>
+        <v:rect style="position:absolute;left:${Math.round(l.loopX - 20)}pt;top:${midY - 24}pt;width:20pt;height:48pt;v-text-anchor:middle;" filled="f" stroked="f">
+          <v:textbox inset="0,0,0,0" style="v-text-anchor:middle;">
+            <p align="center" style="margin:0;padding:0;text-align:center;font-family:'標楷體','DFKai-SB';font-size:${fontSizePt}pt;font-weight:bold;color:#000000;mso-line-height-rule:exactly;line-height:${geo.lineSpacingWord}pt;">不<br/>合<br/>格</p>
+          </v:textbox>
+        </v:rect>
+      `;
+    });
+
+    geo.nodes.forEach(n => {
+      if (n.type === 'start' || n.type === 'end') {
+        vml += `
+          <v:roundrect style="position:absolute;left:${Math.round(n.x)}pt;top:${Math.round(n.y)}pt;width:${Math.round(n.w)}pt;height:${Math.round(n.h)}pt;v-text-anchor:middle;" arcsize="0.5" fillcolor="#FFFFFF" strokecolor="#000000" strokeweight="1.2pt">
+            <v:textbox inset="2pt,2pt,2pt,2pt" style="v-text-anchor:middle;mso-fit-shape-to-text:f;">
+              <p align="center" style="margin:0;padding:0;text-align:center;font-family:'標楷體','DFKai-SB';font-size:${fontSizePt}pt;font-weight:bold;color:#000000;mso-line-height-rule:exactly;line-height:${geo.lineSpacingWord}pt;">${escapeHtml(n.lines[0])}</p>
+            </v:textbox>
+          </v:roundrect>
+        `;
+      } else if (n.type === 'circle') {
+        vml += `<v:oval style="position:absolute;left:${Math.round(n.cx - n.r)}pt;top:${Math.round(n.cy - n.r)}pt;width:${Math.round(n.r * 2)}pt;height:${Math.round(n.r * 2)}pt;" fillcolor="#FFFFFF" strokecolor="#000000" strokeweight="1.2pt"></v:oval>`;
+      } else if (n.type === 'task') {
+        const prefix = n.isSafety ? `<span style="color:#CC0000;font-size:${fontSizePt}pt;">※</span> ` : '';
+        const textHtml = prefix + n.lines.map(escapeHtml).join('<br/>');
+        vml += `
+          <v:rect style="position:absolute;left:${Math.round(n.x)}pt;top:${Math.round(n.y)}pt;width:${Math.round(n.w)}pt;height:${Math.round(n.h)}pt;v-text-anchor:middle;" fillcolor="#FFFFFF" stroke="#000000" strokeweight="1.2pt">
+            <v:textbox inset="2pt,2pt,2pt,2pt" style="v-text-anchor:middle;mso-fit-shape-to-text:f;">
+              <p align="center" style="margin:0;padding:0;text-align:center;font-family:'標楷體','DFKai-SB';font-size:${fontSizePt}pt;font-weight:bold;color:#000000;mso-line-height-rule:exactly;line-height:${geo.lineSpacingWord}pt;">${textHtml}</p>
+            </v:textbox>
+          </v:rect>
+        `;
+      } else if (n.type === 'diamond') {
+        const nw = Math.round(n.w), nh = Math.round(n.h);
+        const halfW = Math.round(nw / 2), halfH = Math.round(nh / 2);
+        vml += `
+          <v:shape style="position:absolute;left:${Math.round(n.x)}pt;top:${Math.round(n.y)}pt;width:${nw}pt;height:${nh}pt;v-text-anchor:middle;" coordsize="${nw},${nh}" path="m ${halfW},0 l ${nw},${halfH}, ${halfW},${nh}, 0,${halfH} x e" fillcolor="#FFFFFF" strokecolor="#000000" strokeweight="1.2pt">
+            <v:textbox inset="2pt,2pt,2pt,2pt" style="v-text-anchor:middle;mso-fit-shape-to-text:f;">
+              <p align="center" style="margin:0;padding:0;text-align:center;font-family:'標楷體','DFKai-SB';font-size:${fontSizePt}pt;font-weight:bold;color:#000000;mso-line-height-rule:exactly;line-height:${geo.lineSpacingWord}pt;"><span style="color:#0033CC;font-size:${fontSizePt}pt;">★</span> 查驗</p>
+            </v:textbox>
+          </v:shape>
+        `;
+      }
+    });
+
+    if (forms.hasForms) {
+      let formsInnerHtml = `<p style="margin:0 0 3pt 0;font-family:'標楷體','DFKai-SB';font-size:${fontSizePt}pt;font-weight:bold;color:#000000;mso-line-height-rule:exactly;line-height:${geo.lineSpacingWord}pt;">使用表單：</p>`;
+      forms.blueList.forEach(line => {
+        formsInnerHtml += `<p style="margin:0 0 2pt 0;font-family:'標楷體','DFKai-SB';font-size:${fontSizePt}pt;font-weight:bold;color:#0033CC;mso-line-height-rule:exactly;line-height:${geo.lineSpacingWord}pt;">${escapeHtml(line)}</p>`;
+      });
+      forms.redList.forEach(line => {
+        formsInnerHtml += `<p style="margin:0 0 2pt 0;font-family:'標楷體','DFKai-SB';font-size:${fontSizePt}pt;font-weight:bold;color:#CC0000;mso-line-height-rule:exactly;line-height:${geo.lineSpacingWord}pt;">${escapeHtml(line)}</p>`;
+      });
+      vml += `
+        <v:rect style="position:absolute;left:${geo.formsX}pt;top:${geo.formsY}pt;width:${geo.formsWidth}pt;height:140pt;" filled="f" stroked="f">
+          <v:textbox inset="0,0,0,0" style="mso-fit-shape-to-text:t;">${formsInnerHtml}</v:textbox>
+        </v:rect>
+      `;
+    }
+
+    if (enableLegend && geo.legendY > 0) {
+      const indentPt = Math.round(fontSizePt * 1.5);
+      vml += `
+        <v:rect style="position:absolute;left:${geo.legendX}pt;top:${geo.legendY}pt;width:${geo.legendWidth}pt;height:${geo.legendH}pt;" filled="f" stroked="f">
+          <v:textbox inset="0,0,0,0" style="mso-fit-shape-to-text:t;">
+            <p style="margin:0 0 4pt 0;font-family:'標楷體','DFKai-SB';font-size:${fontSizePt}pt;color:#000000;mso-line-height-rule:exactly;line-height:${geo.lineSpacingWord}pt;">
+              <b>備註：</b><span style="color:#0033CC;font-weight:bold;">★</span> <b>施工檢驗停留點</b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#CC0000;font-weight:bold;">※</span> <b>安全衛生查驗點</b>
+            </p>
+            <p style="margin:0 0 4pt ${indentPt}pt;text-indent:-${indentPt}pt;font-family:'標楷體','DFKai-SB';font-size:${fontSizePt}pt;color:#000000;mso-line-height-rule:exactly;line-height:${geo.lineSpacingWord}pt;text-align:justify;text-justify:inter-ideograph;">
+              1. 施工檢驗停留點應於廠商完成自主檢查並提出施工抽查申請後辦理；於圖中未標示為施工檢驗停留點，為監造單位之不定期查驗點。
+            </p>
+            <p style="margin:0 0 0 ${indentPt}pt;text-indent:-${indentPt}pt;font-family:'標楷體','DFKai-SB';font-size:${fontSizePt}pt;color:#000000;mso-line-height-rule:exactly;line-height:${geo.lineSpacingWord}pt;text-align:justify;text-justify:inter-ideograph;">
+              2. 安全衛生查驗點應於廠商完成安全衛生檢查並提出施工抽查申請後辦理；屬施工安全監造現場一般項目者，進行一般施工安全衛生抽查，若屬施工安全監造現場特定(專屬)項目者，則需進行特定項目(查驗項目內容/判定基準)施工安全衛生抽查。
+            </p>
+          </v:textbox>
+        </v:rect>
+      `;
+    }
+
+    return `
+      <html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <!--[if gte mso 9]>
+        <xml>
+          <w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument>
+          <o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings>
+        </xml>
+        <![endif]-->
+        <style>
+          v\\:* { behavior: url(#default#VML); display: inline-block; }
+          @page Section1 { size: 21.0cm 29.7cm; margin: 2.54cm 3.18cm 2.54cm 3.18cm; }
+          div.Section1 { page: Section1; }
+          p { margin: 0; padding: 0; }
+        </style>
+      </head>
+      <body>
+        <div class="Section1">
+          <v:group style="position:relative;width:${geo.canvasWidth}pt;height:${geo.totalHeight}pt;" coordsize="${geo.canvasWidth},${geo.totalHeight}">
+            ${vml}
+          </v:group>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  // ==================== 智慧貼上 Word 標準表 ====================
+  function openPasteModal() {
+    document.getElementById('pasteModal').style.display = 'flex';
+    const area = document.getElementById('pasteEditableArea');
+    area.innerHTML = '';
+    area.focus();
+  }
+  function closePasteModal() { document.getElementById('pasteModal').style.display = 'none'; }
+
+  function parsePastedWordTable() {
+    const area = document.getElementById('pasteEditableArea');
+    const tables = area.querySelectorAll('table');
+    if (tables.length === 0) {
+      showToast('未偵測到 Word 表格結構，請從 Word 圈選標準表複製貼上！', true);
+      return;
+    }
+
+    let targetTable = tables[0];
+    tables.forEach(t => { if (t.rows.length > targetTable.rows.length) targetTable = t; });
+
+    const matrix = [];
+    for (let r = 0; r < targetTable.rows.length; r++) {
+      const row = targetTable.rows[r];
+      if (!matrix[r]) matrix[r] = [];
+      let colIdx = 0;
+      for (let c = 0; c < row.cells.length; c++) {
+        while (matrix[r][colIdx] !== undefined) colIdx++;
+        const cell = row.cells[c];
+        const rSpan = cell.rowSpan || 1;
+        const cSpan = cell.colSpan || 1;
+        const rawText = cell.innerText.replace(/\r/g, '').trim();
+
+        for (let rr = 0; rr < rSpan; rr++) {
+          for (let cc = 0; cc < cSpan; cc++) {
+            if (!matrix[r + rr]) matrix[r + rr] = [];
+            matrix[r + rr][colIdx + cc] = rawText;
+          }
+        }
+        colIdx += cSpan;
+      }
+    }
+
+    const dataRows = matrix.filter(row => {
+      const joined = row.join('');
+      if (!joined) return false;
+      if (joined.includes('管理項目') && joined.includes('抽查標準')) return false;
+      return true;
+    });
+
+    if (dataRows.length === 0) {
+      showToast('表格內無有效資料列！', true);
+      return;
+    }
+
+    const newAppData = [];
+    const mainRec = document.getElementById('chkFormTitleInput').value.trim() || '施工抽查紀錄表';
+
+    dataRows.forEach((cols, idx) => {
+      let phaseStr = '', flowStr = '', mgmtStr = '', stdStr = '', timingStr = '', methodStr = '目視', freqStr = '每次', actionStr = '改正', recStr = '', noteStr = '';
+
+      if (cols.length >= 9) {
+        phaseStr = cols[0] || '';
+        flowStr = cols[1] || '';
+        mgmtStr = cols[2] || '';
+        stdStr = cols[3] || '';
+        timingStr = cols[4] || '';
+        if (!phaseStr.includes('施工')) phaseStr = timingStr;
+        methodStr = cols[5] || '目視';
+        freqStr = cols[6] || '每次';
+        actionStr = cols[7] || '改正';
+        recStr = cols[8] || '';
+        noteStr = cols[9] || '';
+      } else if (cols.length >= 7) {
+        flowStr = cols[0] || '';
+        mgmtStr = cols[1] || '';
+        stdStr = cols[2] || '';
+        timingStr = cols[3] || '施工中';
+        phaseStr = timingStr;
+        methodStr = cols[4] || '目視';
+        freqStr = cols[5] || '每次';
+        actionStr = cols[6] || '改正';
+        recStr = cols[7] || '';
+        noteStr = cols[8] || '';
+      } else {
+        return;
+      }
+
+      const rowAllText = cols.join(' ');
+      const hasStarAnywhere = rowAllText.includes('★');
+      const hasSafetyAnywhere = rowAllText.includes('※');
+
+      const stripMarkers = (s) => String(s || '').replace(/[★※]/g, '').trim();
+
+      phaseStr = stripMarkers(phaseStr);
+      flowStr = stripMarkers(flowStr).replace(/\s+/g, '');
+      mgmtStr = stripMarkers(mgmtStr);
+      stdStr = stripMarkers(stdStr);
+      methodStr = stripMarkers(methodStr).replace(/\s+/g, '');
+      freqStr = stripMarkers(freqStr).replace(/\s+/g, '');
+      actionStr = stripMarkers(actionStr).replace(/\s+/g, '');
+      recStr = stripMarkers(recStr).replace(/\s+/g, ' ');
+      noteStr = stripMarkers(noteStr);
+
+      let phaseKey = 'mid';
+      const pCheck = (phaseStr + flowStr + timingStr).replace(/\s+/g, '');
+      if (pCheck.includes('施工前')) phaseKey = 'pre';
+      else if (pCheck.includes('施工後') || pCheck.includes('完成')) phaseKey = 'post';
+
+      if (!flowStr || flowStr === '施工前' || flowStr === '施工中' || flowStr === '施工後') {
+        flowStr = phaseKey === 'pre' ? '施工前準備工作' : (phaseKey === 'post' ? '清理及檢視' : '施工作業');
+      }
+      if (!mgmtStr) mgmtStr = '一般查驗項目';
+
+      const baseUid = Date.now() + idx * 10;
+
+      let flowObj = newAppData.find(f => f.phase === phaseKey && f.flowName === flowStr);
+      if (!flowObj) {
+        flowObj = {
+          id: 'fl_' + baseUid,
+          phase: phaseKey,
+          flowName: flowStr,
+          isSafetyPoint: hasSafetyAnywhere,
+          safetyFormIds: (hasSafetyAnywhere && safetyForms.length > 0) ? [safetyForms[0].id] : [],
+          mgmtItems: []
+        };
+        newAppData.push(flowObj);
+      } else if (hasSafetyAnywhere) {
+        flowObj.isSafetyPoint = true;
+        if (flowObj.safetyFormIds.length === 0 && safetyForms.length > 0) {
+          flowObj.safetyFormIds = [safetyForms[0].id];
+        }
+      }
+
+      let mgmtObj = flowObj.mgmtItems.find(m => m.name === mgmtStr);
+      if (!mgmtObj) {
+        mgmtObj = {
+          id: 'mg_' + (baseUid + 1),
+          name: mgmtStr,
+          isStopPoint: hasStarAnywhere,
+          criteriaList: []
+        };
+        flowObj.mgmtItems.push(mgmtObj);
+      } else if (hasStarAnywhere) {
+        mgmtObj.isStopPoint = true;
+      }
+
+      let useMain = false;
+      let customRec = recStr;
+      if (!recStr || recStr.includes('抽查') || recStr === mainRec) {
+        useMain = true;
+        customRec = '';
+      }
+
+      mgmtObj.criteriaList.push({
+        id: 'cr_' + (baseUid + 2),
+        std: stdStr,
+        method: methodStr || '目視',
+        freq: freqStr || '每次',
+        action: actionStr || '改正',
+        useMainForm: useMain,
+        customRecord: customRec,
+        note: noteStr
+      });
+    });
+
+    if (newAppData.length > 0) {
+      appData = newAppData;
+      splitTaskId = null;
+      closePasteModal();
+      refreshAllViews(true);
+      showToast(`🎉 成功匯入 ${newAppData.length} 個工項！已自動暫存並將 ★ 歸位至管理項目、※ 歸位至施工工項！`);
+    } else {
+      showToast('無法辨識表格欄位，請確認貼上的是標準表格式。', true);
+    }
+  }
+
+  // ==================== 複製與下載 Word (.doc) ====================
+  async function writeHtmlToClipboard(htmlContent, plainText, successMsg) {
+    try {
+      if (navigator.clipboard && window.ClipboardItem) {
+        const blobHtml = new Blob([htmlContent], { type: 'text/html' });
+        const blobText = new Blob([plainText], { type: 'text/plain' });
+        await navigator.clipboard.write([new ClipboardItem({ 'text/html': blobHtml, 'text/plain': blobText })]);
+      } else {
+        const listener = (e) => {
+          e.clipboardData.setData('text/html', htmlContent);
+          e.clipboardData.setData('text/plain', plainText);
+          e.preventDefault();
+        };
+        document.addEventListener('copy', listener);
+        document.execCommand('copy');
+        document.removeEventListener('copy', listener);
+      }
+      showToast(successMsg);
+    } catch (err) {
+      console.error(err);
+      showToast('複製失敗，請確認瀏覽器剪貼簿權限', true);
+    }
+  }
+
+  function wrapWordDocument(bodyHtml, isLandscape = false) {
+    const pageSize = isLandscape ? '29.7cm 21.0cm' : '21.0cm 29.7cm';
+    const margin = isLandscape ? '1.5cm 1.5cm 1.5cm 1.5cm' : '1.5cm 1.8cm 1.5cm 1.8cm';
+    return `
+      <html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <!--[if gte mso 9]>
+        <xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml>
+        <![endif]-->
+        <style>
+          @page Section1 { size: ${pageSize}; margin: ${margin}; }
+          div.Section1 { page: Section1; }
+          body, table, td, th, p { font-family: "標楷體", "DFKai-SB", serif; }
+          table { border-collapse: collapse; }
+        </style>
+      </head>
+      <body><div class="Section1">${bodyHtml}</div></body>
+      </html>
+    `;
+  }
+
+  function triggerDocDownload(fullHtml, filename) {
+    const blob = new Blob(['\ufeff' + fullHtml], { type: 'application/msword;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function copyStandardTableToClipboard() {
+    const html = wrapWordDocument(generateStandardTableHtml(), true);
+    writeHtmlToClipboard(html, document.getElementById('stdTitleInput').value, '📋 已複製「抽查標準表」原生表格！請至 Word 按 Ctrl+V 貼上');
+  }
+  function downloadStandardDoc() {
+    const errs = validateAllData();
+    if (errs.length > 0 && !confirm(`目前尚有 ${errs.length} 項防呆提醒未修正，確定仍要下載嗎？`)) return;
+    const title = document.getElementById('stdTitleInput').value.trim() || '施工抽查標準表';
+    triggerDocDownload(wrapWordDocument(generateStandardTableHtml(), true), `${title}.doc`);
+  }
+
+  function copyChecklistToClipboard() {
+    const html = wrapWordDocument(generateChecklistTableHtml(), false);
+    writeHtmlToClipboard(html, document.getElementById('chkFormTitleInput').value, '📋 已複製「施工抽查表」原生表格！請至 Word 按 Ctrl+V 貼上');
+  }
+  function downloadChecklistDoc() {
+    const errs = validateAllData();
+    if (errs.length > 0 && !confirm(`目前尚有 ${errs.length} 項防呆提醒未修正，確定仍要下載嗎？`)) return;
+    const title = document.getElementById('chkFormTitleInput').value.trim() || '施工抽查紀錄表';
+    triggerDocDownload(wrapWordDocument(generateChecklistTableHtml(), false), `${title}.doc`);
+  }
+
+  function copyFlowVmlToClipboard() {
+    const html = buildWordVmlHtml();
+    const sorted = getMappedFlowData();
+    writeHtmlToClipboard(html, sorted.map(d => d.text).join(' -> '), '📋 已複製「施工流程圖」原生圖形！請至 Word 按 Ctrl+V 貼上');
+  }
+  function downloadFlowDoc() {
+    const title = document.getElementById('flowTitleInput').value.trim() || '標準施工流程圖';
+    triggerDocDownload(buildWordVmlHtml(), `${title}-施工流程圖.doc`);
+  }
+
+  function downloadAllThreeDocs() {
+    const errs = validateAllData();
+    if (errs.length > 0 && !confirm(`系統偵測到 ${errs.length} 項防呆異常，確定仍要打包匯出三階表單嗎？`)) return;
+    const baseName = document.getElementById('flowTitleInput').value.trim() || '工程三階表單';
+    const flowVmlBody = buildWordVmlHtml().replace(/^[\s\S]*?<div class="Section1">/i, '').replace(/<\/div>\s*<\/body>[\s\S]*$/i, '');
+
+    const combinedHtml = `
+      <html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <!--[if gte mso 9]>
+        <xml>
+          <w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument>
+          <o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings>
+        </xml>
+        <![endif]-->
+        <style>
+          v\\:* { behavior: url(#default#VML); display: inline-block; }
+          @page SectionFlow { size: 21.0cm 29.7cm; margin: 2.54cm 3.18cm 2.54cm 3.18cm; }
+          div.SectionFlow { page: SectionFlow; }
+          @page SectionStd { size: 29.7cm 21.0cm; mso-page-orientation: landscape; margin: 1.5cm 1.5cm 1.5cm 1.5cm; }
+          div.SectionStd { page: SectionStd; }
+          @page SectionChk { size: 21.0cm 29.7cm; margin: 1.5cm 1.8cm 1.5cm 1.8cm; }
+          div.SectionChk { page: SectionChk; }
+          body, table, td, th, p { font-family: "標楷體", "DFKai-SB", serif; }
+          table { border-collapse: collapse; }
+        </style>
+      </head>
+      <body>
+        <div class="SectionFlow">${flowVmlBody}</div>
+        <br clear="all" style="page-break-before:always; mso-break-type:section-break" />
+        <div class="SectionStd">${generateStandardTableHtml()}</div>
+        <br clear="all" style="page-break-before:always; mso-break-type:section-break" />
+        <div class="SectionChk">${generateChecklistTableHtml()}</div>
+      </body>
+      </html>
+    `;
+
+    triggerDocDownload(combinedHtml, `${baseName}_三階表單整合總檔.doc`);
+    showToast('📦 已打包下載「三階表單整合總檔 (.doc)」！');
+  }
+
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toastBox');
+    t.textContent = msg;
+    t.style.backgroundColor = isError ? '#b91c1c' : '#0f172a';
+    t.style.display = 'block';
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(() => { t.style.display = 'none'; }, 4000);
+  }
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/[&<>'"]/g, tag => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+    }[tag] || tag));
+  }
+</script>
+</body>
+</html>
