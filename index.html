@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>工程三階表單半自動生成系統 V8</title>
+  <title>工程三階表單半自動生成系統 V9</title>
   <style>
     * { box-sizing: border-box; font-family: "Microsoft JhengHei", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { margin: 0; padding: 0; background-color: #e2e8f0; color: #0f172a; font-size: 14px; }
@@ -74,7 +74,7 @@
     .val-ok { background: #dcfce7; border: 1.5px solid #86efac; color: #166534; }
     .val-err { background: #fef9c3; border: 2px solid #eab308; color: #854d0e; }
 
-    /* ==================== 所見即所得編輯大表格 (釘選表頭列) ==================== */
+    /* ==================== 所見即所得編輯大表格 (釘選表頭列 + 方案 B 管理項目整塊深淺交錯) ==================== */
     .wysiwyg-table-wrap { border: 2.5px solid #000; background: #fff; }
     table.wysiwyg-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
     table.wysiwyg-table thead th {
@@ -95,19 +95,34 @@
     table.wysiwyg-table td { border-bottom: 1px solid #000; border-right: 1px solid #000; padding: 5px 5px; vertical-align: top; background: #fff; word-wrap: break-word; overflow-wrap: break-word; }
     table.wysiwyg-table td:last-child { border-right: none; }
 
-    td.phase-cell-pre { background-color: #dbeafe !important; color: #1e3a8a; font-weight: 700; text-align: center; vertical-align: middle !important; }
-    td.phase-cell-mid { background-color: #fef3c7 !important; color: #78350f; font-weight: 700; text-align: center; vertical-align: middle !important; }
-    td.phase-cell-post { background-color: #dcfce7 !important; color: #14532d; font-weight: 700; text-align: center; vertical-align: middle !important; }
+    /* 第 1 層：施工階段欄固定飽和底色 */
+    td.phase-cell-pre  { background-color: #93c5fd !important; color: #1e3a8a; font-weight: 700; text-align: center; vertical-align: middle !important; }
+    td.phase-cell-mid  { background-color: #fcd34d !important; color: #78350f; font-weight: 700; text-align: center; vertical-align: middle !important; }
+    td.phase-cell-post { background-color: #86efac !important; color: #14532d; font-weight: 700; text-align: center; vertical-align: middle !important; }
 
-    tr.row-phase-pre td.flow-cell { background-color: #f0f7ff; }
-    tr.row-phase-mid td.flow-cell { background-color: #fffbeb; }
-    tr.row-phase-post td.flow-cell { background-color: #f0fdf4; }
+    /* 第 2 層：施工工項欄柔和底色 */
+    tr.row-phase-pre td.flow-cell  { background-color: #e0f2fe !important; }
+    tr.row-phase-mid td.flow-cell  { background-color: #fef3c7 !important; }
+    tr.row-phase-post td.flow-cell { background-color: #dcfce7 !important; }
 
-    .cell-input { width: 100%; border: 1px solid #cbd5e1 !important; background: #fff !important; padding: 4px 6px !important; font-size: 0.86rem !important; border-radius: 4px !important; color: #000; line-height: 1.25; resize: vertical; white-space: pre-wrap; word-break: break-word; }
-    .cell-input:focus { border-color: #2563eb !important; box-shadow: 0 0 0 2px rgba(37,99,235,0.15) !important; }
+    /* ==================== 方案 B：依「管理項目(A)」整塊深淺交錯底色 ==================== */
+    /* 施工前 (藍系交錯) */
+    td.b-pre-group-odd   { background-color: #bae6fd !important; }
+    td.b-pre-group-even  { background-color: #f8fafc !important; }
+    /* 施工中 (暖橘系交錯 - 與防呆亮黃明確區隔) */
+    td.b-mid-group-odd   { background-color: #fed7aa !important; }
+    td.b-mid-group-even  { background-color: #fffaf5 !important; }
+    /* 施工後 (綠系交錯) */
+    td.b-post-group-odd  { background-color: #bbf7d0 !important; }
+    td.b-post-group-even { background-color: #f7fee7 !important; }
+
+    /* 輸入框微透明融入方案 B 區塊底色，聚焦打字時轉為純白底 */
+    .cell-input { width: 100%; border: 1px solid rgba(15, 23, 42, 0.22) !important; background: rgba(255, 255, 255, 0.72) !important; padding: 4px 6px !important; font-size: 0.86rem !important; border-radius: 4px !important; color: #000; line-height: 1.25; resize: vertical; white-space: pre-wrap; word-break: break-word; transition: background-color 0.15s, border-color 0.15s; }
+    .cell-input:hover { background: rgba(255, 255, 255, 0.9) !important; }
+    .cell-input:focus { background: #ffffff !important; border-color: #2563eb !important; box-shadow: 0 0 0 2px rgba(37,99,235,0.2) !important; }
 
     /* 拖曳手把與高亮線 */
-    .drag-handle { cursor: grab; color: #475569; font-size: 0.82rem; user-select: none; padding: 2px 5px; border-radius: 4px; display: inline-block; font-weight: bold; background: #e2e8f0; border: 1px solid #94a3b8; }
+    .drag-handle { cursor: grab; color: #334155; font-size: 0.82rem; user-select: none; padding: 2px 5px; border-radius: 4px; display: inline-block; font-weight: bold; background: rgba(255,255,255,0.85); border: 1px solid #94a3b8; }
     .drag-handle:hover { color: #0f172a; background: #cbd5e1; }
     .drag-handle:active { cursor: grabbing; }
     .drag-over-top { border-top: 4px solid #2563eb !important; }
@@ -115,7 +130,7 @@
     .drag-over-box { outline: 3px dashed #2563eb !important; outline-offset: -3px; background-color: #eff6ff !important; }
 
     /* 安衛複選清單樣式 */
-    .safety-multi-box { margin-top: 5px; padding: 5px 6px; background: #fff5f5; border: 1px solid #fca5a5; border-radius: 5px; text-align: left; font-size: 0.76rem; }
+    .safety-multi-box { margin-top: 5px; padding: 5px 6px; background: rgba(255,245,245,0.92); border: 1px solid #fca5a5; border-radius: 5px; text-align: left; font-size: 0.76rem; }
     .safety-multi-item { display: flex; align-items: flex-start; gap: 4px; margin-bottom: 3px; cursor: pointer; color: #7f1d1d; font-weight: 600; line-height: 1.25; word-break: break-all; }
     .safety-multi-item input { width: 14px; height: 14px; margin-top: 1px; accent-color: #dc2626; flex-shrink: 0; }
 
@@ -123,12 +138,12 @@
     .rec-compact-box { display: flex; flex-direction: column; gap: 4px; text-align: left; }
     .rec-compact-top { display: flex; align-items: center; justify-content: space-between; gap: 4px; flex-wrap: wrap; }
     .rec-badge-safety { display: inline-block; background: #fef2f2; border: 1px solid #fca5a5; color: #dc2626; padding: 1px 6px; border-radius: 4px; font-size: 0.74rem; font-weight: 700; cursor: help; }
-    .rec-chk-simple { display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; font-weight: 700; color: #1e40af; cursor: pointer; background: #eff6ff; padding: 2px 6px; border-radius: 4px; border: 1px solid #bfdbfe; }
+    .rec-chk-simple { display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; font-weight: 700; color: #1e40af; cursor: pointer; background: rgba(239,246,255,0.9); padding: 2px 6px; border-radius: 4px; border: 1px solid #93c5fd; }
     .rec-chk-simple input { width: 14px; height: 14px; margin: 0; }
 
     /* 防呆錯誤黃框樣式 */
-    .input-error { border: 2px solid #eab308 !important; background-color: #fef9c3 !important; box-shadow: 0 0 0 2px rgba(234,179,8,0.25) !important; }
-    .err-msg { color: #a16207; background: #fef08a; padding: 1px 4px; border-radius: 3px; font-size: 0.74rem; font-weight: 700; display: inline-block; margin-top: 2px; }
+    .input-error { border: 2px solid #eab308 !important; background-color: #fef08a !important; box-shadow: 0 0 0 2px rgba(234,179,8,0.25) !important; }
+    .err-msg { color: #a16207; background: #fef08a; border: 1px solid #eab308; padding: 1px 4px; border-radius: 3px; font-size: 0.74rem; font-weight: 700; display: inline-block; margin-top: 2px; }
 
     /* 右側安衛表單管理區 */
     .safety-list { max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
@@ -136,7 +151,7 @@
     .safety-item-row { display: flex; align-items: center; gap: 5px; }
     .safety-item input[type="text"] { font-size: 0.82rem; font-weight: 700; color: #991b1b; padding: 4px 6px; border: 1px solid #fecaca; background: #fff; }
 
-    /* A4 預覽紙張 (12pt 字級、1.0 倍行高) */
+    /* A4 預覽紙張 (12pt 字級、1.0 倍行高、純白無底色) */
     .paper-preview-wrapper { background: #cbd5e1; padding: 20px; border-radius: 8px; overflow-x: auto; display: flex; justify-content: center; }
     .paper-a4-portrait { background: #fff; width: 794px; min-height: 1123px; padding: 34px 40px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); color: #000; position: relative; }
     .paper-a4-landscape { background: #fff; width: 1080px; min-height: 720px; padding: 28px 30px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); color: #000; overflow: hidden; }
@@ -195,7 +210,7 @@
         <div class="card card-red">
           <div class="card-title">
             <div>
-              <span style="font-size:1.06rem; color:#1e293b;">📋 施工抽查標準表（直接於表格內填寫，按住 <b style="color:#2563eb;">☰</b> 可跨階段或頭尾拖曳排序）</span>
+              <span style="font-size:1.06rem; color:#1e293b;">📋 施工抽查標準表（管理項目採區塊深淺交錯，按住 <b style="color:#2563eb;">☰</b> 可跨階段或頭尾拖曳排序）</span>
             </div>
             <div style="display:flex; gap:8px;">
               <button class="btn btn-primary" onclick="copyStandardTableToClipboard()">📋 複製標準表 (貼上 Word)</button>
@@ -250,10 +265,10 @@
           </div>
         </div>
 
-        <!-- 抽查標準表 Word 即時預覽 -->
+        <!-- 抽查標準表 Word 即時預覽 (純白無底色) -->
         <div class="card">
           <div class="card-title">
-            <span>👁️ 抽查標準表 Word 輸出排版即時預覽（管理紀錄已縮窄為約 2.2cm，完美對齊範本比例）</span>
+            <span>👁️ 抽查標準表 Word 輸出排版即時預覽（預覽與下載皆維持純白無底色、四邊粗外框）</span>
           </div>
           <div class="paper-preview-wrapper">
             <div class="paper-a4-landscape word-doc-area" id="standardPreviewPaper"></div>
@@ -498,14 +513,13 @@
     window.scrollTo(winX, winY);
   }
 
-  // ==================== 需求 1 & 2 核心修復：嚴格計算表格 2D 矩陣 (修正空儲存格漏判 Bug) 並強制將每欄物理寬度與外粗框寫入每個 <td> ====================
+  // ==================== 嚴格計算表格 2D 矩陣並強制將每欄物理寬度與外粗框寫入每個 <td> ====================
   function applyWordOuterThickBorders(htmlString) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlString, 'text/html');
     const tables = doc.querySelectorAll('table.word-table-thick');
 
     tables.forEach(table => {
-      // 讀取 <col> 上定義的百分比與公分寬度
       const colEls = Array.from(table.querySelectorAll('colgroup col'));
       const colSpecs = colEls.map(col => ({
         pct: col.getAttribute('data-pct') || '',
@@ -521,7 +535,6 @@
         if (!grid[r]) grid[r] = [];
         let c = 0;
         Array.from(tr.cells).forEach(cell => {
-          // 關鍵修正：必須用 !== undefined 判斷，避免空白 <td> 被當成空位置覆蓋！
           while (grid[r][c] !== undefined) c++;
           const rSpan = cell.rowSpan || 1;
           const cSpan = cell.colSpan || 1;
@@ -557,7 +570,6 @@
             }
           }
 
-          // 計算該儲存格（含跨欄 colspan）對應的精確公分寬度與百分比寬度，直接鎖死在 <td> 上防止 Word 自動撐寬
           let sumPct = 0;
           let sumCm = 0;
           for (let cc = minC; cc <= maxC; cc++) {
@@ -593,7 +605,7 @@
   // ==================== 自動暫存 (LocalStorage) ====================
   function buildProjectStateObject() {
     return {
-      version: '8.0',
+      version: '9.0',
       savedAt: new Date().toISOString(),
       globalConfig: {
         stdTitle: document.getElementById('stdTitleInput').value,
@@ -1040,7 +1052,7 @@
     return ph === 'pre' ? '施工前' : (ph === 'post' ? '施工後' : '施工中');
   }
 
-  // ==================== 頁籤 1：直覺式表格編輯器 ====================
+  // ==================== 頁籤 1：直覺式表格編輯器 (套用方案 B：依管理項目整塊深淺交錯) ====================
   function renderStandardEditor() {
     renderPreservingScroll(() => {
       const stdVal = document.getElementById('stdTitleInput').value.trim() || '（請填寫抽查標準表標題）';
@@ -1078,6 +1090,8 @@
         flowsInPhase.forEach(f => f.mgmtItems.forEach(m => { phaseTotalRows += m.criteriaList.length; }));
 
         let phaseCellRendered = false;
+        // 方案 B 計數器：依同階段內的「管理項目(A)」組別奇偶交錯
+        let phaseMgmtGroupCounter = 0;
 
         flowsInPhase.forEach((flow) => {
           let flowTotalRows = 0;
@@ -1087,6 +1101,10 @@
           const flowSafetyNames = getSafetyNamesByIds(flow.safetyFormIds);
 
           flow.mgmtItems.forEach((mgmt) => {
+            phaseMgmtGroupCounter++;
+            const isOddGroup = (phaseMgmtGroupCounter % 2 === 1);
+            const groupColorCls = `b-${p.key}-group-${isOddGroup ? 'odd' : 'even'}`;
+
             const mgmtTotalRows = mgmt.criteriaList.length;
             let mgmtCellRendered = false;
 
@@ -1135,7 +1153,7 @@
                     <textarea id="inp_flow_${flow.id}" rows="2" class="cell-input ${!flow.flowName.trim() ? 'input-error' : ''}" style="font-weight:700;" placeholder="施工工項名稱" oninput="onFlowNameInput('${flow.id}', this.value)">${escapeHtml(flow.flowName)}</textarea>
                   </div>
                   <div style="display:flex; align-items:center; justify-content:space-between; gap:4px; flex-wrap:wrap;">
-                    <label style="cursor:pointer; font-size:0.78rem; font-weight:700; color:#b91c1c; display:inline-flex; align-items:center; gap:4px; background:#fff; padding:2px 6px; border-radius:4px; border:1px solid #fca5a5;">
+                    <label style="cursor:pointer; font-size:0.78rem; font-weight:700; color:#b91c1c; display:inline-flex; align-items:center; gap:4px; background:rgba(255,255,255,0.9); padding:2px 6px; border-radius:4px; border:1px solid #fca5a5;">
                       <input type="checkbox" ${flow.isSafetyPoint ? 'checked' : ''} onchange="toggleFlowSafety('${flow.id}', this.checked)">
                       <span><b style="color:#CC0000;">※</b> 安衛點</span>
                     </label>
@@ -1155,9 +1173,10 @@
                 flowCellRendered = true;
               }
 
-              // 3. 管理項目(A)
+              // 3. 管理項目(A) (套用方案 B 群組底色 groupColorCls)
               if (!mgmtCellRendered) {
                 const tdMgmt = document.createElement('td');
+                tdMgmt.className = groupColorCls;
                 tdMgmt.rowSpan = mgmtTotalRows;
                 tdMgmt.dataset.flowId = flow.id;
                 tdMgmt.dataset.mgmtId = mgmt.id;
@@ -1174,7 +1193,7 @@
                     ${mgmt.isStopPoint ? '<span style="color:#0033CC;font-weight:bold;font-size:1rem;margin-top:4px;">★</span>' : ''}
                     <textarea id="inp_mgmt_${mgmt.id}" rows="2" class="cell-input ${!mgmt.name.trim() ? 'input-error' : ''}" style="font-weight:700;" placeholder="管理項目(A)" oninput="onMgmtNameInput('${flow.id}','${mgmt.id}', this.value)">${escapeHtml(mgmt.name)}</textarea>
                   </div>
-                  <label style="cursor:pointer; font-size:0.78rem; font-weight:700; color:#1e40af; display:inline-flex; align-items:center; gap:4px; background:#eff6ff; padding:2px 7px; border-radius:4px; border:1px solid #bfdbfe;">
+                  <label style="cursor:pointer; font-size:0.78rem; font-weight:700; color:#1e40af; display:inline-flex; align-items:center; gap:4px; background:rgba(255,255,255,0.88); padding:2px 7px; border-radius:4px; border:1px solid #93c5fd;">
                     <input type="checkbox" ${mgmt.isStopPoint ? 'checked' : ''} onchange="toggleMgmtStopPoint('${flow.id}','${mgmt.id}', this.checked)">
                     <span><b style="color:#0033CC;">★</b> 檢驗停留點</span>
                   </label>
@@ -1185,30 +1204,35 @@
                 mgmtCellRendered = true;
               }
 
-              // 4. 抽查標準(B)
+              // 4 ~ 11 欄：全部套用同一個管理項目的 groupColorCls (方案 B：同組管理項目整塊同色)
               const isFreqInvalid = (!cr.freq.trim()) || (mgmt.isStopPoint && cr.freq.includes('不定期'));
               const isStdInvalid = !cr.std.trim();
 
+              // 4. 抽查標準(B)
               const tdStd = document.createElement('td');
+              tdStd.className = groupColorCls;
               tdStd.innerHTML = `<textarea id="inp_std_${cr.id}" rows="${cr.std.includes('\n') ? 4 : 2}" class="cell-input ${isStdInvalid ? 'input-error' : ''}" placeholder="輸入抽查標準(B)" oninput="onCriteriaInput('${flow.id}','${mgmt.id}','${cr.id}','std',this.value)">${escapeHtml(cr.std)}</textarea>`;
               tr.appendChild(tdStd);
 
               // 5. 抽查時機
               const tdTiming = document.createElement('td');
+              tdTiming.className = groupColorCls;
               tdTiming.style.textAlign = 'center';
               tdTiming.style.verticalAlign = 'middle';
               tdTiming.style.fontWeight = '700';
-              tdTiming.style.color = '#334155';
+              tdTiming.style.color = '#1e293b';
               tdTiming.textContent = p.label;
               tr.appendChild(tdTiming);
 
               // 6. 抽查方法
               const tdMethod = document.createElement('td');
+              tdMethod.className = groupColorCls;
               tdMethod.innerHTML = `<textarea rows="2" class="cell-input" style="text-align:center;" placeholder="如：目視" oninput="onCriteriaInput('${flow.id}','${mgmt.id}','${cr.id}','method',this.value)">${escapeHtml(cr.method)}</textarea>`;
               tr.appendChild(tdMethod);
 
               // 7. 抽查頻率
               const tdFreq = document.createElement('td');
+              tdFreq.className = groupColorCls;
               tdFreq.innerHTML = `
                 <textarea id="inp_freq_${cr.id}" rows="2" class="cell-input ${isFreqInvalid ? 'input-error' : ''}" style="text-align:center;" placeholder="如：每次" oninput="onCriteriaInput('${flow.id}','${mgmt.id}','${cr.id}','freq',this.value)">${escapeHtml(cr.freq)}</textarea>
                 <span id="err_freq_${cr.id}" class="err-msg" style="display:${(mgmt.isStopPoint && cr.freq.includes('不定期')) ? 'inline-block' : 'none'};">⚠ 停留點禁填不定期</span>
@@ -1217,11 +1241,13 @@
 
               // 8. 不符合之處置方法
               const tdAction = document.createElement('td');
+              tdAction.className = groupColorCls;
               tdAction.innerHTML = `<textarea rows="2" class="cell-input" style="text-align:center;" placeholder="如：改正" oninput="onCriteriaInput('${flow.id}','${mgmt.id}','${cr.id}','action',this.value)">${escapeHtml(cr.action)}</textarea>`;
               tr.appendChild(tdAction);
 
               // 9. 極簡化「管理紀錄」編輯欄
               const tdRecord = document.createElement('td');
+              tdRecord.className = groupColorCls;
               const safetyBadgeHtml = (flow.isSafetyPoint && flowSafetyNames.length > 0)
                 ? `<span class="rec-badge-safety" title="已自動連動並將於預覽/Word印出：\n${escapeHtml(flowSafetyNames.join('\n'))}">※ 已連動安衛表</span>`
                 : '';
@@ -1242,11 +1268,13 @@
 
               // 10. 備註
               const tdNote = document.createElement('td');
+              tdNote.className = groupColorCls;
               tdNote.innerHTML = `<textarea rows="2" class="cell-input" placeholder="備註" oninput="onCriteriaInput('${flow.id}','${mgmt.id}','${cr.id}','note',this.value)">${escapeHtml(cr.note)}</textarea>`;
               tr.appendChild(tdNote);
 
               // 11. 刪列
               const tdOp = document.createElement('td');
+              tdOp.className = groupColorCls;
               tdOp.style.textAlign = 'center';
               tdOp.style.verticalAlign = 'middle';
               tdOp.innerHTML = `<button class="btn-danger-ghost" onclick="deleteCriteria('${flow.id}','${mgmt.id}','${cr.id}')" title="刪除此列">✕</button>`;
@@ -1653,22 +1681,11 @@
     return flatRows;
   }
 
-  // ==================== 需求 2：輸出 Word「抽查標準表」HTML (依圖 3 比例：管理紀錄縮窄為約 2.2cm / 8.5%) ====================
+  // ==================== 輸出 Word「抽查標準表」HTML (維持純白無底色) ====================
   function generateStandardTableHtml() {
     const stdTitle = document.getElementById('stdTitleInput').value.trim() || '（請填寫抽查標準表標題）';
     const flatRows = buildFlattenedRows();
 
-    // A4 橫向總可印寬度約 26.7cm，依圖 3 精確分配：
-    // Col 0 (階段): 3.0% (0.80cm)
-    // Col 1 (工項橫排): 10.5% (2.80cm)
-    // Col 2 (管理項目A): 14.5% (3.87cm)
-    // Col 3 (抽查標準B): 25.5% (6.81cm)
-    // Col 4 (抽查時機): 7.5% (2.00cm)
-    // Col 5 (抽查方法): 10.0% (2.67cm)
-    // Col 6 (抽查頻率): 8.5% (2.27cm)
-    // Col 7 (不符合處置): 7.0% (1.87cm)
-    // Col 8 (管理紀錄 - 依需求縮窄約 2.2cm): 8.5% (2.27cm)
-    // Col 9 (備註): 5.0% (1.34cm)
     const colgroupHtml = `
       <colgroup>
         <col data-pct="3.0" data-cm="0.80" style="width:3.0%;">
@@ -1746,8 +1763,7 @@
     if (paper) paper.innerHTML = generateStandardTableHtml();
   }
 
-  // ==================== 需求 1 & 2：輸出「施工抽查表單 (頁籤 2)」HTML ====================
-  // 依圖 2 比例強制寫入物理寬度：抽查標準 5.0cm (28.5%)、實際抽查情形 4.4cm (25%)、抽查結果 1.2cm (7%)、簽名欄 2.9cm (16.5%)
+  // ==================== 輸出「施工抽查表單 (頁籤 2)」HTML ====================
   function generateChecklistTableHtml() {
     const planHeader = document.getElementById('chkPlanHeader').value.trim();
     const docCode = document.getElementById('chkDocCode').value.trim();
@@ -1771,14 +1787,6 @@
       }
     });
 
-    // A4 直向總寬約 17.4cm，嚴格對齊圖 2 比例：
-    // Col 0 (階段直排): 3.5% (0.61cm)
-    // Col 1 (工項直排): 4.5% (0.78cm)
-    // Col 2 (管理項目): 15.0% (2.61cm)
-    // Col 3 (抽查標準 - 依需求設為 5.0cm): 28.5% (4.96cm)
-    // Col 4 (實際抽查情形): 25.0% (4.35cm)
-    // Col 5 (抽查結果): 7.0% (1.22cm)
-    // Col 6 (備註 / 抽查人簽名加寬): 16.5% (2.87cm)
     const colgroupHtml = `
       <colgroup>
         <col data-pct="3.5" data-cm="0.61" style="width:3.5%;">
