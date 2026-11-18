@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>工程三階表單半自動生成系統 V6</title>
+  <title>工程三階表單半自動生成系統 V8</title>
   <style>
     * { box-sizing: border-box; font-family: "Microsoft JhengHei", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { margin: 0; padding: 0; background-color: #e2e8f0; color: #0f172a; font-size: 14px; }
@@ -16,7 +16,6 @@
     .chrome-tab.active { background: #f8fafc; color: #1e40af; border-top: 3px solid #2563eb; padding-top: 7px; box-shadow: 0 -2px 6px rgba(0,0,0,0.05); }
     .tab-badge { font-size: 0.75rem; padding: 2px 7px; border-radius: 99px; font-weight: 700; }
     .badge-ok { background: #dcfce7; color: #166534; }
-    /* 需求 8：防呆警示全面改為黃色系 */
     .badge-err { background: #fef08a; color: #854d0e; border: 1px solid #eab308; }
 
     .header-right-actions { padding-bottom: 6px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
@@ -64,26 +63,25 @@
     input[type="text"]:focus, textarea:focus, select:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.12); }
     input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: #2563eb; vertical-align: middle; }
 
-    /* 符號快捷列 (固定於 top: 48px，高度約 42px) */
+    /* 符號快捷列 */
     .symbol-toolbar { position: sticky; top: 48px; z-index: 245; background: #1e293b; color: #fff; padding: 7px 14px; border-radius: 8px 8px 0 0; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; box-shadow: 0 3px 8px rgba(0,0,0,0.12); }
     .sym-group { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
     .sym-btn { background: #334155; color: #f8fafc; border: 1px solid #475569; border-radius: 4px; padding: 3px 9px; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
     .sym-btn:hover { background: #2563eb; border-color: #60a5fa; }
 
-    /* 需求 8：防呆警示列改為黃色系 */
+    /* 防呆警示列 (黃色系) */
     .validation-banner { padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; font-weight: 700; font-size: 0.86rem; }
     .val-ok { background: #dcfce7; border: 1.5px solid #86efac; color: #166534; }
     .val-err { background: #fef9c3; border: 2px solid #eab308; color: #854d0e; }
 
-    /* ==================== 所見即所得編輯大表格 (需求 9：釘選表頭列) ==================== */
-    /* 注意：為了讓 table th 的 position: sticky 對視窗生效，外層不可設 overflow-x: auto */
+    /* ==================== 所見即所得編輯大表格 (釘選表頭列) ==================== */
     .wysiwyg-table-wrap { border: 2.5px solid #000; background: #fff; }
     table.wysiwyg-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
     table.wysiwyg-table thead th {
       position: sticky;
-      top: 88px; /* 緊貼於頂部頁籤列(48px) + 符號快捷列(40px) 正下方 */
+      top: 88px;
       z-index: 230;
-      background: #e2e8f0;
+      background: #ffffff;
       color: #000;
       font-weight: 700;
       font-size: 0.88rem;
@@ -91,7 +89,7 @@
       border-right: 1px solid #000;
       padding: 8px 4px;
       text-align: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.06);
     }
     table.wysiwyg-table thead th:last-child { border-right: none; }
     table.wysiwyg-table td { border-bottom: 1px solid #000; border-right: 1px solid #000; padding: 5px 5px; vertical-align: top; background: #fff; word-wrap: break-word; overflow-wrap: break-word; }
@@ -128,7 +126,7 @@
     .rec-chk-simple { display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; font-weight: 700; color: #1e40af; cursor: pointer; background: #eff6ff; padding: 2px 6px; border-radius: 4px; border: 1px solid #bfdbfe; }
     .rec-chk-simple input { width: 14px; height: 14px; margin: 0; }
 
-    /* 需求 8：防呆錯誤黃框樣式 (與紅色安衛表單明確區隔) */
+    /* 防呆錯誤黃框樣式 */
     .input-error { border: 2px solid #eab308 !important; background-color: #fef9c3 !important; box-shadow: 0 0 0 2px rgba(234,179,8,0.25) !important; }
     .err-msg { color: #a16207; background: #fef08a; padding: 1px 4px; border-radius: 3px; font-size: 0.74rem; font-weight: 700; display: inline-block; margin-top: 2px; }
 
@@ -138,14 +136,13 @@
     .safety-item-row { display: flex; align-items: center; gap: 5px; }
     .safety-item input[type="text"] { font-size: 0.82rem; font-weight: 700; color: #991b1b; padding: 4px 6px; border: 1px solid #fecaca; background: #fff; }
 
-    /* A4 預覽紙張 (需求 2 & 4：12pt 字級、1.0 倍行高) */
+    /* A4 預覽紙張 (12pt 字級、1.0 倍行高) */
     .paper-preview-wrapper { background: #cbd5e1; padding: 20px; border-radius: 8px; overflow-x: auto; display: flex; justify-content: center; }
     .paper-a4-portrait { background: #fff; width: 794px; min-height: 1123px; padding: 34px 40px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); color: #000; position: relative; }
     .paper-a4-landscape { background: #fff; width: 1080px; min-height: 720px; padding: 28px 30px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); color: #000; overflow: hidden; }
     .word-doc-area, .word-doc-area * { font-family: "標楷體", "DFKai-SB", "BiauKai", serif; color: #000; }
     .word-table { width: 100%; border-collapse: collapse; font-size: 12pt; line-height: 1.0; table-layout: fixed; }
-    .word-table th, .word-table td { border: 0.75pt solid #000; padding: 4px 5px; vertical-align: middle; word-wrap: break-word; overflow-wrap: break-word; line-height: 1.0; font-size: 12pt; }
-    .word-table-thick { border: 2.25pt solid #000 !important; }
+    .word-table th, .word-table td { border: 0.75pt solid #000; padding: 4px 5px; vertical-align: middle; word-wrap: break-word; overflow-wrap: break-word; line-height: 1.0; font-size: 12pt; background: transparent; }
 
     /* 頁籤 3 流程圖微調列 */
     .adjust-toolbar { display: flex; flex-wrap: wrap; gap: 12px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 9px 14px; align-items: center; }
@@ -165,7 +162,7 @@
 </head>
 <body>
 
-<!-- 頂部 Chrome 風格頁籤列 (已依需求 1 移除 JSON 匯出入按鈕) -->
+<!-- 頂部 Chrome 風格頁籤列 -->
 <div class="chrome-header">
   <div class="tabs-bar">
     <div class="chrome-tab active" onclick="switchTab(1)" id="tabBtn1">
@@ -228,7 +225,8 @@
 
           <div id="validationBanner" class="validation-banner val-ok"></div>
 
-          <div id="editorTableHeading" style="text-align:center; font-family:'標楷體','DFKai-SB',serif; font-size:1.35rem; font-weight:bold; margin:8px 0;"></div>
+          <!-- 標題預覽列 (純黑色) -->
+          <div id="editorTableHeading" style="text-align:center; font-family:'標楷體','DFKai-SB',serif; font-size:1.35rem; font-weight:bold; color:#000000; margin:8px 0;"></div>
 
           <div class="wysiwyg-table-wrap">
             <table class="wysiwyg-table">
@@ -242,8 +240,8 @@
                   <th style="width:85px;">抽查方法</th>
                   <th style="width:85px;">抽查頻率<br><small style="color:#a16207;">(★禁填不定期)</small></th>
                   <th style="width:82px;">不符合之<br>處置方法</th>
-                  <th style="width:165px;">管理紀錄<br><small style="color:#475569;">(勾選本表 / 填其他表)</small></th>
-                  <th style="width:68px;">備註</th>
+                  <th style="width:155px;">管理紀錄<br><small style="color:#475569;">(勾選本表 / 填其他表)</small></th>
+                  <th style="width:65px;">備註</th>
                   <th style="width:42px;">刪列</th>
                 </tr>
               </thead>
@@ -255,7 +253,7 @@
         <!-- 抽查標準表 Word 即時預覽 -->
         <div class="card">
           <div class="card-title">
-            <span>👁️ 抽查標準表 Word 輸出排版即時預覽（12pt、1.0倍行高、粗外框、工項橫排）</span>
+            <span>👁️ 抽查標準表 Word 輸出排版即時預覽（管理紀錄已縮窄為約 2.2cm，完美對齊範本比例）</span>
           </div>
           <div class="paper-preview-wrapper">
             <div class="paper-a4-landscape word-doc-area" id="standardPreviewPaper"></div>
@@ -275,12 +273,12 @@
             <span id="err_stdTitle" class="err-msg" style="display:none;">⚠ 請填入抽查標準表標題與編號</span>
           </div>
           <div class="form-field">
-            <label style="color:#0033CC;">2. 施工抽查表編號與名稱 (頁籤 2 & 管理紀錄 & 流程圖)：</label>
+            <label>2. 施工抽查表編號與名稱 (頁籤 2 & 管理紀錄 & 流程圖)：</label>
             <input type="text" id="chkFormTitleInput" value="表 02448 隧道防水層施工抽查紀錄表" placeholder="請填入編號與名稱 (必填)" oninput="syncGlobalConfig()">
             <span id="err_chkTitle" class="err-msg" style="display:none;">⚠ 請填入施工抽查表編號與名稱</span>
           </div>
           <div class="form-field" style="margin-bottom:4px;">
-            <label style="color:#1e40af;">3. 施工流程圖表頭編號與名稱 (頁籤 3 頂部)：</label>
+            <label>3. 施工流程圖表頭編號與名稱 (頁籤 3 頂部)：</label>
             <input type="text" id="flowTitleInput" value="02448 隧道防水層施工" placeholder="請填入編號與名稱 (必填)" oninput="syncGlobalConfig()">
             <span id="err_flowTitle" class="err-msg" style="display:none;">⚠ 請填入施工流程圖表頭編號與名稱</span>
           </div>
@@ -315,7 +313,6 @@
         </div>
       </div>
 
-      <!-- 需求 3：已移除「編號欄標題」填入框 -->
       <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:10px; margin-bottom:10px;">
         <div class="form-field" style="margin:0;">
           <label>頂部監造計畫 / 機關抬頭：</label>
@@ -450,7 +447,7 @@
 
 <script>
   // ==================== LocalStorage 金鑰與全域狀態 ====================
-  const STORAGE_KEY = 'THREE_TIER_FORM_SYSTEM_V6_STATE';
+  const STORAGE_KEY = 'THREE_TIER_FORM_SYSTEM_V8_STATE';
 
   let safetyForms = [];
   let appData = [];
@@ -501,10 +498,102 @@
     window.scrollTo(winX, winY);
   }
 
+  // ==================== 需求 1 & 2 核心修復：嚴格計算表格 2D 矩陣 (修正空儲存格漏判 Bug) 並強制將每欄物理寬度與外粗框寫入每個 <td> ====================
+  function applyWordOuterThickBorders(htmlString) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlString, 'text/html');
+    const tables = doc.querySelectorAll('table.word-table-thick');
+
+    tables.forEach(table => {
+      // 讀取 <col> 上定義的百分比與公分寬度
+      const colEls = Array.from(table.querySelectorAll('colgroup col'));
+      const colSpecs = colEls.map(col => ({
+        pct: col.getAttribute('data-pct') || '',
+        cm: col.getAttribute('data-cm') || ''
+      }));
+
+      const grid = [];
+      const rows = Array.from(table.rows);
+      let maxRows = rows.length;
+      let maxCols = colSpecs.length || 0;
+
+      rows.forEach((tr, r) => {
+        if (!grid[r]) grid[r] = [];
+        let c = 0;
+        Array.from(tr.cells).forEach(cell => {
+          // 關鍵修正：必須用 !== undefined 判斷，避免空白 <td> 被當成空位置覆蓋！
+          while (grid[r][c] !== undefined) c++;
+          const rSpan = cell.rowSpan || 1;
+          const cSpan = cell.colSpan || 1;
+          for (let dr = 0; dr < rSpan; dr++) {
+            for (let dc = 0; dc < cSpan; dc++) {
+              if (!grid[r + dr]) grid[r + dr] = [];
+              grid[r + dr][c + dc] = cell;
+            }
+          }
+          c += cSpan;
+          if (c > maxCols) maxCols = c;
+        });
+      });
+
+      maxRows = grid.length;
+      const visited = new Set();
+
+      for (let r = 0; r < maxRows; r++) {
+        for (let c = 0; c < maxCols; c++) {
+          const cell = grid[r] && grid[r][c];
+          if (!cell || visited.has(cell)) continue;
+          visited.add(cell);
+
+          let minR = maxRows, maxR = -1, minC = maxCols, maxC = -1;
+          for (let rr = 0; rr < maxRows; rr++) {
+            for (let cc = 0; cc < maxCols; cc++) {
+              if (grid[rr] && grid[rr][cc] === cell) {
+                if (rr < minR) minR = rr;
+                if (rr > maxR) maxR = rr;
+                if (cc < minC) minC = cc;
+                if (cc > maxC) maxC = cc;
+              }
+            }
+          }
+
+          // 計算該儲存格（含跨欄 colspan）對應的精確公分寬度與百分比寬度，直接鎖死在 <td> 上防止 Word 自動撐寬
+          let sumPct = 0;
+          let sumCm = 0;
+          for (let cc = minC; cc <= maxC; cc++) {
+            if (colSpecs[cc]) {
+              sumPct += parseFloat(colSpecs[cc].pct) || 0;
+              sumCm += parseFloat(colSpecs[cc].cm) || 0;
+            }
+          }
+
+          let widthStyle = '';
+          if (sumCm > 0 && sumPct > 0) {
+            const cmStr = sumCm.toFixed(2) + 'cm';
+            const pctStr = sumPct.toFixed(1) + '%';
+            cell.setAttribute('width', pctStr);
+            widthStyle = `;width:${cmStr} !important;mso-width-alt:auto;`;
+          }
+
+          const bTop = (minR === 0) ? '2.25pt solid #000000' : '0.75pt solid #000000';
+          const bBottom = (maxR === maxRows - 1) ? '2.25pt solid #000000' : '0.75pt solid #000000';
+          const bLeft = (minC === 0) ? '2.25pt solid #000000' : '0.75pt solid #000000';
+          const bRight = (maxC === maxCols - 1) ? '2.25pt solid #000000' : '0.75pt solid #000000';
+
+          const existingStyle = cell.getAttribute('style') || '';
+          const extraStyle = `${widthStyle};border-top:${bTop} !important;border-bottom:${bBottom} !important;border-left:${bLeft} !important;border-right:${bRight} !important;mso-border-top-alt:${bTop};mso-border-bottom-alt:${bBottom};mso-border-left-alt:${bLeft};mso-border-right-alt:${bRight};`;
+          cell.setAttribute('style', existingStyle + extraStyle);
+        }
+      }
+    });
+
+    return doc.body.innerHTML;
+  }
+
   // ==================== 自動暫存 (LocalStorage) ====================
   function buildProjectStateObject() {
     return {
-      version: '6.0',
+      version: '8.0',
       savedAt: new Date().toISOString(),
       globalConfig: {
         stdTitle: document.getElementById('stdTitleInput').value,
@@ -607,7 +696,7 @@
     }
   }
 
-  // ==================== 需求 6：預設範例與 4 種預設安衛表單名稱（預設不帶編號以測試編號防呆） ====================
+  // ==================== 預設範例載入 ====================
   function loadSampleData(silent = false) {
     safetyForms = [
       { id: 'sf1', name: '一般作業停留點安全檢核表' },
@@ -729,7 +818,8 @@
   }
 
   function syncGlobalConfig() {
-    document.getElementById('editorTableHeading').innerHTML = colorizeSymbolsHtml(document.getElementById('stdTitleInput').value);
+    const stdVal = document.getElementById('stdTitleInput').value.trim() || '（請填寫抽查標準表標題）';
+    document.getElementById('editorTableHeading').innerHTML = colorizeSymbolsHtml(stdVal);
     validateAllData();
     renderStandardPreview();
     renderChecklistPreview();
@@ -766,7 +856,7 @@
     lastFocusedInput.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
-  // ==================== 需求 6 & 7：右下角安衛表單索引庫（含未填編號黃框防呆） ====================
+  // ==================== 右下角安衛表單索引庫 ====================
   function isSafetyFormUsed(sfId) {
     return appData.some(f => f.isSafetyPoint && Array.isArray(f.safetyFormIds) && f.safetyFormIds.includes(sfId));
   }
@@ -864,11 +954,10 @@
     return parts.join('\n');
   }
 
-  // ==================== 需求 5、7、8：防呆檢核引擎 (全面黃色警示 + 3大標題必填防呆 + 安衛表編號防呆) ====================
+  // ==================== 防呆檢核引擎 ====================
   function validateAllData() {
     const errors = [];
 
-    // 1. 檢查右上角 3 大共用基本索引標題是否空白或缺少編號
     const stdTitleEl = document.getElementById('stdTitleInput');
     const chkTitleEl = document.getElementById('chkFormTitleInput');
     const flowTitleEl = document.getElementById('flowTitleInput');
@@ -893,14 +982,12 @@
     if (chkInvalid) errors.push('右上角「2. 施工抽查表編號與名稱」尚未填寫或缺少表單編號！');
     if (flowInvalid) errors.push('右上角「3. 施工流程圖表頭編號與名稱」尚未填寫或缺少編號！');
 
-    // 2. 檢查被引用的安衛表單是否已填寫編號(含數字)
     safetyForms.forEach(sf => {
       if (isSafetyFormUsed(sf.id) && !hasNumberCode(sf.name)) {
         errors.push(`右下角安衛表單「${sf.name}」已被工項勾選引用，請補上該計畫之表單編號！`);
       }
     });
 
-    // 3. 檢查表格內各欄位與停留點「不定期」防呆
     appData.forEach(flow => {
       if (!flow.flowName.trim()) {
         errors.push(`【${getPhaseLabel(flow.phase)}】有施工工項名稱空白`);
@@ -956,7 +1043,8 @@
   // ==================== 頁籤 1：直覺式表格編輯器 ====================
   function renderStandardEditor() {
     renderPreservingScroll(() => {
-      document.getElementById('editorTableHeading').innerHTML = colorizeSymbolsHtml(document.getElementById('stdTitleInput').value);
+      const stdVal = document.getElementById('stdTitleInput').value.trim() || '（請填寫抽查標準表標題）';
+      document.getElementById('editorTableHeading').innerHTML = colorizeSymbolsHtml(stdVal);
       const tbody = document.getElementById('wysiwygTbody');
       tbody.innerHTML = '';
 
@@ -1565,24 +1653,34 @@
     return flatRows;
   }
 
-  // ==================== 需求 2 & 4：輸出 Word「抽查標準表」HTML (第二層工項改橫排、12pt、行距 1.0 倍高、外框粗框 2.25pt) ====================
+  // ==================== 需求 2：輸出 Word「抽查標準表」HTML (依圖 3 比例：管理紀錄縮窄為約 2.2cm / 8.5%) ====================
   function generateStandardTableHtml() {
     const stdTitle = document.getElementById('stdTitleInput').value.trim() || '（請填寫抽查標準表標題）';
     const flatRows = buildFlattenedRows();
 
-    // 第二層工項改為橫列顯示，加寬第 2 欄至 9.5%
+    // A4 橫向總可印寬度約 26.7cm，依圖 3 精確分配：
+    // Col 0 (階段): 3.0% (0.80cm)
+    // Col 1 (工項橫排): 10.5% (2.80cm)
+    // Col 2 (管理項目A): 14.5% (3.87cm)
+    // Col 3 (抽查標準B): 25.5% (6.81cm)
+    // Col 4 (抽查時機): 7.5% (2.00cm)
+    // Col 5 (抽查方法): 10.0% (2.67cm)
+    // Col 6 (抽查頻率): 8.5% (2.27cm)
+    // Col 7 (不符合處置): 7.0% (1.87cm)
+    // Col 8 (管理紀錄 - 依需求縮窄約 2.2cm): 8.5% (2.27cm)
+    // Col 9 (備註): 5.0% (1.34cm)
     const colgroupHtml = `
       <colgroup>
-        <col style="width:3.5%;">
-        <col style="width:9.5%;">
-        <col style="width:13.5%;">
-        <col style="width:23.5%;">
-        <col style="width:6.5%;">
-        <col style="width:8%;">
-        <col style="width:7%;">
-        <col style="width:7.5%;">
-        <col style="width:15.5%;">
-        <col style="width:5.5%;">
+        <col data-pct="3.0" data-cm="0.80" style="width:3.0%;">
+        <col data-pct="10.5" data-cm="2.80" style="width:10.5%;">
+        <col data-pct="14.5" data-cm="3.87" style="width:14.5%;">
+        <col data-pct="25.5" data-cm="6.81" style="width:25.5%;">
+        <col data-pct="7.5" data-cm="2.00" style="width:7.5%;">
+        <col data-pct="10.0" data-cm="2.67" style="width:10.0%;">
+        <col data-pct="8.5" data-cm="2.27" style="width:8.5%;">
+        <col data-pct="7.0" data-cm="1.87" style="width:7.0%;">
+        <col data-pct="8.5" data-cm="2.27" style="width:8.5%;">
+        <col data-pct="5.0" data-cm="1.34" style="width:5.0%;">
       </colgroup>
     `;
 
@@ -1593,7 +1691,6 @@
         trs += `<td rowspan="${r.phaseSpan}" align="center" style="text-align:center; font-size:12pt; line-height:1.0;">${r.phaseLabel.split('').join('<br/>')}</td>`;
       }
       if (r.flowSpan > 0) {
-        // 需求 2：抽查標準裡面第二層工項改成橫列顯示
         const safetyPrefix = r.isSafetyPoint ? `<span style="color:#CC0000;font-weight:bold;">※</span>` : '';
         trs += `<td rowspan="${r.flowSpan}" align="center" style="text-align:center; font-size:12pt; line-height:1.0;">${safetyPrefix}${colorizeSymbolsHtml(r.flowName)}</td>`;
       }
@@ -1615,23 +1712,23 @@
       trs += `</tr>`;
     });
 
-    return `
-      <div style="text-align:center; font-family:'標楷體','DFKai-SB',serif; font-size:16pt; font-weight:bold; margin-bottom:8pt; line-height:1.0;">
+    const rawHtml = `
+      <div style="text-align:center; font-family:'標楷體','DFKai-SB',serif; font-size:16pt; font-weight:bold; color:#000000; margin-bottom:8pt; line-height:1.0;">
         ${colorizeSymbolsHtml(stdTitle)}
       </div>
-      <table class="word-table word-table-thick" border="1" cellspacing="0" cellpadding="4" style="width:100%; border-collapse:collapse; border:2.25pt solid #000; mso-border-alt:solid windowtext 0.75pt; mso-border-top-alt:solid windowtext 2.25pt; mso-border-bottom-alt:solid windowtext 2.25pt; mso-border-left-alt:solid windowtext 2.25pt; mso-border-right-alt:solid windowtext 2.25pt; font-family:'標楷體','DFKai-SB',serif; font-size:12pt; line-height:1.0; table-layout:fixed;">
+      <table class="word-table word-table-thick" border="1" cellspacing="0" cellpadding="4" style="width:100%; border-collapse:collapse; font-family:'標楷體','DFKai-SB',serif; font-size:12pt; line-height:1.0; table-layout:fixed; mso-table-layout-alt:fixed;">
         ${colgroupHtml}
         <thead>
-          <tr style="background:#f8fafc; font-weight:bold; text-align:center; font-size:12pt; line-height:1.0;">
-            <td colspan="2" align="center" style="border-top:2.25pt solid #000; border-left:2.25pt solid #000; font-size:12pt; line-height:1.0;">施工流程</td>
-            <td align="center" style="border-top:2.25pt solid #000; font-size:12pt; line-height:1.0;">管理項目(A)</td>
-            <td align="center" style="border-top:2.25pt solid #000; font-size:12pt; line-height:1.0;">抽查標準(B)</td>
-            <td align="center" style="border-top:2.25pt solid #000; font-size:12pt; line-height:1.0;">抽查<br/>時機</td>
-            <td align="center" style="border-top:2.25pt solid #000; font-size:12pt; line-height:1.0;">抽查方法</td>
-            <td align="center" style="border-top:2.25pt solid #000; font-size:12pt; line-height:1.0;">抽查頻率</td>
-            <td align="center" style="border-top:2.25pt solid #000; font-size:12pt; line-height:1.0;">不符合之<br/>處置方法</td>
-            <td align="center" style="border-top:2.25pt solid #000; font-size:12pt; line-height:1.0;">管理紀錄</td>
-            <td align="center" style="border-top:2.25pt solid #000; border-right:2.25pt solid #000; font-size:12pt; line-height:1.0;">備註</td>
+          <tr style="font-weight:bold; text-align:center; font-size:12pt; line-height:1.0;">
+            <td colspan="2" align="center" style="font-size:12pt; line-height:1.0;">施工流程</td>
+            <td align="center" style="font-size:12pt; line-height:1.0;">管理項目(A)</td>
+            <td align="center" style="font-size:12pt; line-height:1.0;">抽查標準(B)</td>
+            <td align="center" style="font-size:12pt; line-height:1.0;">抽查<br/>時機</td>
+            <td align="center" style="font-size:12pt; line-height:1.0;">抽查方法</td>
+            <td align="center" style="font-size:12pt; line-height:1.0;">抽查頻率</td>
+            <td align="center" style="font-size:12pt; line-height:1.0;">不符合之<br/>處置方法</td>
+            <td align="center" style="font-size:12pt; line-height:1.0;">管理紀錄</td>
+            <td align="center" style="font-size:12pt; line-height:1.0;">備註</td>
           </tr>
         </thead>
         <tbody>${trs}</tbody>
@@ -1640,6 +1737,8 @@
         <span style="color:#0033CC;">★</span>檢驗停留點/<span style="color:#CC0000;">※</span><span style="color:#CC0000;">安衛查驗點</span>：廠商應完成自主檢查後向監造單位申請查驗；未標示者，監造單位應辦理不定期抽查。
       </p>
     `;
+
+    return applyWordOuterThickBorders(rawHtml);
   }
 
   function renderStandardPreview() {
@@ -1647,7 +1746,8 @@
     if (paper) paper.innerHTML = generateStandardTableHtml();
   }
 
-  // ==================== 需求 2 & 3：輸出「施工抽查表單 (頁籤 2)」HTML (12pt、行距 1.0 倍高、固定「編 號」標籤) ====================
+  // ==================== 需求 1 & 2：輸出「施工抽查表單 (頁籤 2)」HTML ====================
+  // 依圖 2 比例強制寫入物理寬度：抽查標準 5.0cm (28.5%)、實際抽查情形 4.4cm (25%)、抽查結果 1.2cm (7%)、簽名欄 2.9cm (16.5%)
   function generateChecklistTableHtml() {
     const planHeader = document.getElementById('chkPlanHeader').value.trim();
     const docCode = document.getElementById('chkDocCode').value.trim();
@@ -1671,15 +1771,23 @@
       }
     });
 
+    // A4 直向總寬約 17.4cm，嚴格對齊圖 2 比例：
+    // Col 0 (階段直排): 3.5% (0.61cm)
+    // Col 1 (工項直排): 4.5% (0.78cm)
+    // Col 2 (管理項目): 15.0% (2.61cm)
+    // Col 3 (抽查標準 - 依需求設為 5.0cm): 28.5% (4.96cm)
+    // Col 4 (實際抽查情形): 25.0% (4.35cm)
+    // Col 5 (抽查結果): 7.0% (1.22cm)
+    // Col 6 (備註 / 抽查人簽名加寬): 16.5% (2.87cm)
     const colgroupHtml = `
       <colgroup>
-        <col style="width:4.5%;">
-        <col style="width:5.5%;">
-        <col style="width:19.5%;">
-        <col style="width:30.5%;">
-        <col style="width:18%;">
-        <col style="width:5.5%;">
-        <col style="width:16.5%;">
+        <col data-pct="3.5" data-cm="0.61" style="width:3.5%;">
+        <col data-pct="4.5" data-cm="0.78" style="width:4.5%;">
+        <col data-pct="15.0" data-cm="2.61" style="width:15.0%;">
+        <col data-pct="28.5" data-cm="4.96" style="width:28.5%;">
+        <col data-pct="25.0" data-cm="4.35" style="width:25.0%;">
+        <col data-pct="7.0" data-cm="1.22" style="width:7.0%;">
+        <col data-pct="16.5" data-cm="2.87" style="width:16.5%;">
       </colgroup>
     `;
 
@@ -1699,9 +1807,9 @@
       }
       bodyTrs += `
         <td style="font-size:12pt; line-height:1.0;">${colorizeSymbolsHtml(r.std)}</td>
-        <td style="font-size:12pt; line-height:1.0;"></td>
-        <td align="center" style="font-size:12pt; line-height:1.0;"></td>
-        <td style="font-size:12pt; line-height:1.0;"></td>
+        <td style="font-size:12pt; line-height:1.0;">&nbsp;</td>
+        <td align="center" style="font-size:12pt; line-height:1.0;">&nbsp;</td>
+        <td style="font-size:12pt; line-height:1.0;">&nbsp;</td>
       `;
       bodyTrs += `</tr>`;
     });
@@ -1721,8 +1829,8 @@
             <span style="color:#CC0000; font-weight:bold;">${sfText}</span>
           </td>
           <td style="font-size:12pt; line-height:1.0;">□施工前<br/>□施工中<br/>□施工後<br/><br/>□不定期</td>
-          <td></td>
-          <td></td>
+          <td style="font-size:12pt; line-height:1.0;">&nbsp;</td>
+          <td style="font-size:12pt; line-height:1.0;">&nbsp;</td>
         </tr>
       `;
     }
@@ -1780,20 +1888,20 @@
       `;
     }
 
-    return `
-      ${planHeader ? `<div style="text-align:center; font-family:'標楷體','DFKai-SB',serif; font-size:14pt; font-weight:bold; margin-bottom:3pt; line-height:1.0;">${escapeHtml(planHeader)}</div>` : ''}
-      <div style="display:flex; justify-content:${docCode ? 'space-between' : 'center'}; align-items:baseline; font-family:'標楷體','DFKai-SB',serif; margin-bottom:6pt; line-height:1.0;">
-        <span style="font-size:14pt; font-weight:bold;">${colorizeSymbolsHtml(formTitle)}</span>
-        ${docCode ? `<span style="font-size:12pt; font-weight:bold;">${escapeHtml(docCode)}</span>` : ''}
+    const rawHtml = `
+      ${planHeader ? `<div style="text-align:center; font-family:'標楷體','DFKai-SB',serif; font-size:14pt; font-weight:bold; color:#000000; margin-bottom:3pt; line-height:1.0;">${escapeHtml(planHeader)}</div>` : ''}
+      <div style="display:flex; justify-content:${docCode ? 'space-between' : 'center'}; align-items:baseline; font-family:'標楷體','DFKai-SB',serif; margin-bottom:6pt; line-height:1.0; color:#000000;">
+        <span style="font-size:14pt; font-weight:bold; color:#000000;">${colorizeSymbolsHtml(formTitle)}</span>
+        ${docCode ? `<span style="font-size:12pt; font-weight:bold; color:#000000;">${escapeHtml(docCode)}</span>` : ''}
       </div>
 
-      <table class="word-table word-table-thick" border="1" cellspacing="0" cellpadding="4" style="width:100%; border-collapse:collapse; border:2.25pt solid #000; font-family:'標楷體','DFKai-SB',serif; font-size:12pt; line-height:1.0; table-layout:fixed;">
+      <table class="word-table word-table-thick" border="1" cellspacing="0" cellpadding="4" style="width:100%; border-collapse:collapse; font-family:'標楷體','DFKai-SB',serif; font-size:12pt; line-height:1.0; table-layout:fixed; mso-table-layout-alt:fixed;">
         ${colgroupHtml}
         <tr>
           <td colspan="3" style="font-weight:bold; font-size:12pt; line-height:1.0;">工程名稱</td>
           <td style="font-size:12pt; line-height:1.0;">${escapeHtml(projectName)}</td>
           <td style="font-weight:bold; text-align:center; font-size:12pt; line-height:1.0;">編 號</td>
-          <td colspan="2" style="font-size:12pt; line-height:1.0;"></td>
+          <td colspan="2" style="font-size:12pt; line-height:1.0;">&nbsp;</td>
         </tr>
         <tr>
           <td colspan="3" style="font-weight:bold; font-size:12pt; line-height:1.0;">分項工程名稱</td>
@@ -1801,7 +1909,7 @@
         </tr>
         <tr>
           <td colspan="3" style="font-weight:bold; font-size:12pt; line-height:1.0;">抽查位置</td>
-          <td style="font-size:12pt; line-height:1.0;"></td>
+          <td style="font-size:12pt; line-height:1.0;">&nbsp;</td>
           <td style="font-weight:bold; text-align:center; font-size:12pt; line-height:1.0;">抽查日期</td>
           <td colspan="2" align="center" style="text-align:center; font-size:12pt; line-height:1.0;">  年  月  日</td>
         </tr>
@@ -1826,7 +1934,7 @@
           <td colspan="3" style="font-size:12pt; line-height:1.0;">□齊全<br/>□不齊全</td>
         </tr>
         ` : ''}
-        <tr style="font-weight:bold; text-align:center; background:#f8fafc; font-size:12pt; line-height:1.0;">
+        <tr style="font-weight:bold; text-align:center; font-size:12pt; line-height:1.0;">
           <td colspan="3" rowspan="2" align="center" style="text-align:center; font-size:12pt; line-height:1.0;">
             管理項目<br/>（<span style="color:#0033CC;">★</span>檢驗停留點／<br/><span style="color:#CC0000;">※</span>安衛查驗點）
           </td>
@@ -1835,8 +1943,8 @@
           <td rowspan="2" align="center" style="text-align:center; font-size:12pt; line-height:1.0;">抽查<br/>結果</td>
           <td align="center" style="text-align:center; height:18pt; font-size:12pt; line-height:1.0;">備註</td>
         </tr>
-        <tr style="font-weight:bold; text-align:center; background:#f8fafc; font-size:12pt; line-height:1.0;">
-          <td align="center" style="text-align:center; font-size:10pt; line-height:1.0;">抽查人簽名<br/><span style="font-size:8.5pt; font-weight:normal;">(加註日期/時間)</span></td>
+        <tr style="font-weight:bold; text-align:center; font-size:12pt; line-height:1.0;">
+          <td align="center" style="text-align:center; font-size:11pt; line-height:1.0;">抽查人簽名</td>
         </tr>
         ${bodyTrs}
         ${safetyBottomHtml}
@@ -1844,13 +1952,15 @@
       </table>
       ${bottomSignatureHtml}
     `;
+
+    return applyWordOuterThickBorders(rawHtml);
   }
 
   function renderChecklistPreview() {
     document.getElementById('checklistPreviewPaper').innerHTML = generateChecklistTableHtml();
   }
 
-  // ==================== 需求 3：施工流程圖 (簡化 Word 標準邊界文字) ====================
+  // ==================== 施工流程圖 ====================
   function getMappedFlowData() {
     const phaseWeights = { 'pre': 1, 'mid': 2, 'post': 3 };
     const sortedFlows = [...appData].sort((a, b) => {
@@ -1980,7 +2090,7 @@
     const breakIndex = splitTaskId ? sorted.findIndex(d => String(d.id) === String(splitTaskId)) : -1;
     const isDoubleCol = (breakIndex !== -1 && breakIndex < sorted.length - 1);
     const renderPhases = enablePhases;
-    const flowHeaderTitle = document.getElementById('flowTitleInput').value.trim();
+    const flowHeaderTitle = document.getElementById('flowTitleInput').value.trim() || '（請填寫抽查流程圖標題）';
 
     let startW = Math.round(nodeWidth * 0.8);
     if (startW % 2 !== 0) startW += 1;
@@ -2350,7 +2460,6 @@
         if (isWidthOverflow) reasons.push(`寬度超出標準邊界 (請將圖塊寬度調小)`);
         alertBox.innerHTML = `⚠️ 超出 Word 標準邊界：${reasons.join('；')}！`;
       } else {
-        // 需求 3：改為簡潔的「✅符合 Word 標準邊界（上下 2.54cm、左右 3.18cm）」
         alertBox.style.background = '#dcfce7';
         alertBox.style.border = '1.5px solid #86efac';
         alertBox.style.color = '#166534';
@@ -2361,7 +2470,7 @@
     let innerContent = '';
 
     if (geo.flowHeaderTitle) {
-      innerContent += `<text x="${geo.headerCenterX}" y="22" font-size="${fontSizePt + 5}" font-weight="bold" fill="#0033CC" font-family="'標楷體', 'DFKai-SB', serif" text-anchor="middle">${escapeHtml(geo.flowHeaderTitle)}</text>`;
+      innerContent += `<text x="${geo.headerCenterX}" y="22" font-size="${fontSizePt + 5}" font-weight="bold" fill="#000000" font-family="'標楷體', 'DFKai-SB', serif" text-anchor="middle">${escapeHtml(geo.flowHeaderTitle)}</text>`;
     }
 
     if (geo.verticalLine) {
@@ -2462,7 +2571,6 @@
       `;
     }
 
-    // 需求 3：移除「安全框」字眼，改為「📐 Word 標準邊界 (寬 14.64cm × 高 24.62cm)」
     svg.innerHTML = `
       <defs>
         <marker id="arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
@@ -2494,7 +2602,7 @@
       vml += `
         <v:rect style="position:absolute;left:${Math.max(0, geo.headerCenterX - 180)}pt;top:2pt;width:360pt;height:24pt;v-text-anchor:middle;" filled="f" stroked="f">
           <v:textbox inset="0,0,0,0" style="v-text-anchor:middle;">
-            <p align="center" style="margin:0;padding:0;text-align:center;font-family:'標楷體','DFKai-SB';font-size:${fontSizePt + 4}pt;font-weight:bold;color:#0033CC;">
+            <p align="center" style="margin:0;padding:0;text-align:center;font-family:'標楷體','DFKai-SB';font-size:${fontSizePt + 4}pt;font-weight:bold;color:#000000;">
               ${escapeHtml(geo.flowHeaderTitle)}
             </p>
           </v:textbox>
@@ -2642,7 +2750,7 @@
     `;
   }
 
-  // ==================== 需求 5：智慧貼上 Word 標準表（貼入後自動清空 3 大表單標題並觸發黃色防呆，但保留安衛表單庫） ====================
+  // ==================== 智慧貼上 Word 標準表 ====================
   function openPasteModal() {
     document.getElementById('pasteModal').style.display = 'flex';
     const area = document.getElementById('pasteEditableArea');
@@ -2810,7 +2918,6 @@
       appData = newAppData;
       splitTaskId = null;
 
-      // 需求 5：貼入智慧辨識後，自動清空右上角 3 個表單標題（並觸發黃框防呆提醒修改），但完整保留右下角安衛表單索引庫！
       document.getElementById('stdTitleInput').value = '';
       document.getElementById('chkFormTitleInput').value = '';
       document.getElementById('flowTitleInput').value = '';
@@ -2861,7 +2968,7 @@
           @page Section1 { size: ${pageSize}; margin: ${margin}; }
           div.Section1 { page: Section1; }
           body, table, td, th, p { font-family: "標楷體", "DFKai-SB", serif; font-size: 12pt; line-height: 1.0; }
-          table { border-collapse: collapse; }
+          table { border-collapse: collapse; table-layout: fixed; mso-table-layout-alt: fixed; }
         </style>
       </head>
       <body><div class="Section1">${bodyHtml}</div></body>
@@ -2940,7 +3047,7 @@
           @page SectionChk { size: 21.0cm 29.7cm; margin: 1.5cm 1.8cm 1.5cm 1.8cm; }
           div.SectionChk { page: SectionChk; }
           body, table, td, th, p { font-family: "標楷體", "DFKai-SB", serif; font-size: 12pt; line-height: 1.0; }
-          table { border-collapse: collapse; }
+          table { border-collapse: collapse; table-layout: fixed; mso-table-layout-alt: fixed; }
         </style>
       </head>
       <body>
