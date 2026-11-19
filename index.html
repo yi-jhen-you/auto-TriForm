@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>工程三階表單半自動生成系統 V12</title>
+  <title>工程三階表單半自動生成系統 V13</title>
   <style>
     * { box-sizing: border-box; font-family: "Microsoft JhengHei", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { margin: 0; padding: 0; background-color: #e2e8f0; color: #0f172a; font-size: 14px; }
@@ -130,10 +130,10 @@
     .drag-over-bottom { border-bottom: 4px solid #2563eb !important; }
     .drag-over-box { outline: 3px dashed #2563eb !important; outline-offset: -3px; background-color: #eff6ff !important; }
 
+    .rec-compact-box { display: flex; flex-direction: column; gap: 4px; text-align: left; }
     .input-error { border: 2px solid #eab308 !important; background-color: #fef08a !important; box-shadow: 0 0 0 2px rgba(234,179,8,0.25) !important; }
     .err-msg { color: #a16207; background: #fef08a; border: 1px solid #eab308; padding: 1px 4px; border-radius: 3px; font-size: 0.74rem; font-weight: 700; display: inline-block; margin-top: 2px; }
 
-    /* 右側安衛表單索引庫（含左側複選框） */
     .safety-list { max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
     .safety-item { display: flex; flex-direction: column; gap: 3px; background: #fff5f5; padding: 6px 7px; border-radius: 6px; border: 1px solid #fca5a5; }
     .safety-item.selected-safety { background: #fee2e2; border-color: #f87171; }
@@ -227,7 +227,8 @@
 
           <div id="validationBanner" class="validation-banner val-ok"></div>
 
-          <div id="editorTableHeading" style="text-align:center; font-family:'標楷體','DFKai-SB',serif; font-size:1.35rem; font-weight:bold; color:#000000; margin:8px 0;"></div>
+          <!-- 編輯區標題（預設靠左、12pt、黑色） -->
+          <div id="editorTableHeading" style="text-align:left; font-family:'標楷體','DFKai-SB',serif; font-size:12pt; line-height:1.0; font-weight:bold; color:#000000; margin:8px 0;"></div>
 
           <div class="wysiwyg-table-wrap">
             <table class="wysiwyg-table">
@@ -262,14 +263,14 @@
         </div>
       </div>
 
-      <!-- 右側欄：共用基本索引 + 安衛表單庫（左側複選框控制引用） -->
+      <!-- 右側欄：共用基本索引 + 安衛表單庫 -->
       <div class="right-sidebar">
         <div class="card card-blue">
           <div class="card-title" style="color:#0369a1;">
             <span>📌 共用基本索引設定</span>
           </div>
           <div class="form-field">
-            <label>1. 抽查標準表標題 (頁籤 1)：</label>
+            <label>1. 抽查標準表編號與名稱 (頁籤 1)：</label>
             <input type="text" id="stdTitleInput" value="表 02448 隧道防水膜施工抽查標準" placeholder="請填入編號與名稱 (必填)" oninput="syncGlobalConfig()">
             <span id="err_stdTitle" class="err-msg" style="display:none;">⚠ 請填入抽查標準表標題與編號</span>
           </div>
@@ -279,9 +280,9 @@
             <span id="err_chkTitle" class="err-msg" style="display:none;">⚠ 請填入施工抽查表編號與名稱</span>
           </div>
           <div class="form-field" style="margin-bottom:4px;">
-            <label>3. 施工流程圖表頭編號與名稱 (頁籤 3 頂部)：</label>
-            <input type="text" id="flowTitleInput" value="02448 隧道防水層施工" placeholder="請填入編號與名稱 (必填)" oninput="syncGlobalConfig()">
-            <span id="err_flowTitle" class="err-msg" style="display:none;">⚠ 請填入施工流程圖表頭編號與名稱</span>
+            <label>3. 施工流程圖標題 (頁籤 3 頂部，不需加圖號)：</label>
+            <input type="text" id="flowTitleInput" value="測量施工抽查流程圖" placeholder="例如：測量施工抽查流程圖" oninput="syncGlobalConfig()">
+            <span id="err_flowTitle" class="err-msg" style="display:none;">⚠ 請填入施工流程圖標題</span>
           </div>
         </div>
 
@@ -454,7 +455,7 @@
 <div id="toastBox" class="toast-fixed"></div>
 
 <script>
-  const STORAGE_KEY = 'THREE_TIER_FORM_SYSTEM_V12_STATE';
+  const STORAGE_KEY = 'THREE_TIER_FORM_SYSTEM_V13_STATE';
 
   const A4_PAGE_W_PT = 595;
   const A4_PAGE_H_PT = 842;
@@ -468,9 +469,7 @@
   const CIRCLE_RADIUS = 9;
   const HEADER_TITLE_OFFSET = 28;
 
-  // 每張安衛表單物件包含：{ id, name, selected }
   let safetyForms = [];
-  // 每個施工階段是否合併勾選「本施工抽查表」
   let phaseMainFormChecked = { pre: false, mid: true, post: true };
   let appData = [];
 
@@ -546,7 +545,6 @@
     return /\d/.test(String(str || ''));
   }
 
-  // 取得「安衛表單索引庫中已被左側核取方塊勾選」且有填寫名稱的表單
   function getCheckedSafetyFormNames() {
     const anySafetyChecked = appData.some(f => !!f.isSafetyPoint);
     if (!anySafetyChecked) return [];
@@ -577,9 +575,9 @@
     ];
     phaseMainFormChecked = { pre: false, mid: true, post: true };
 
-    document.getElementById('stdTitleInput').value = '表 02448 隧道防水膜施工抽查標準';
-    document.getElementById('chkFormTitleInput').value = '表 02448 隧道防水層施工抽查紀錄表';
-    document.getElementById('flowTitleInput').value = '02448 隧道防水層施工';
+    document.getElementById('stdTitleInput').value = '表 7-2-1 測量施工抽查標準';
+    document.getElementById('chkFormTitleInput').value = '表 7-3-1 測量施工抽查表';
+    document.getElementById('flowTitleInput').value = '測量施工抽查流程圖';
     document.getElementById('chkPlanHeader').value = '台灣世曦工程顧問股份有限公司';
     document.getElementById('chkShowIsoCode').checked = true;
     document.getElementById('chkDocCode').value = 'QP-11103B-05-01';
@@ -590,82 +588,49 @@
     document.getElementById('chkShowSafetyBottom').checked = true;
     document.getElementById('chkShowDefectBottom').checked = true;
 
+    const mainRec = '表 7-3-1 測量施工抽查表';
     appData = [
       {
-        id: 'fl_1', phase: 'pre', flowName: '施工前準備工作', isSafetyPoint: true,
+        id: 'fl_1', phase: 'pre', flowName: '校核文件及儀器', isSafetyPoint: false,
         mgmtItems: [
           {
-            id: 'mg_1', name: '證明文件', isStopPoint: false,
+            id: 'mg_1', name: '測量計畫', isStopPoint: false,
             criteriaList: [
-              { id: 'cr_1', std: '施工計畫核定文號', method: '文件查閱', freq: '每次', action: '不得施工', customRecord: '核備文件', note: '' },
-              { id: 'cr_2', std: '施工圖核定文號', method: '文件查閱', freq: '每次', action: '不得施工', customRecord: '核備文件', note: '' }
+              { id: 'cr_1', std: '依設計圖說', method: '文件查閱', freq: '每次', action: '不得施工', customRecord: '核備文件', note: '' }
             ]
           },
           {
-            id: 'mg_2', name: '材料進場', isStopPoint: true,
+            id: 'mg_2', name: '測量儀器校正', isStopPoint: true,
             criteriaList: [
-              { id: 'cr_3', std: '合格材料(非織物、防水膜)抽驗紀錄', method: '文件查閱', freq: '每批', action: '不得施工', customRecord: '材料/設備品質抽驗紀錄表', note: '' }
+              { id: 'cr_2', std: '經緯儀：垂直角指標差絕對值≦15 秒；水平角差絕對值≦15 秒', method: '文件查閱', freq: '每次', action: '不得施工', customRecord: mainRec, note: '' }
             ]
           }
         ]
       },
       {
-        id: 'fl_2', phase: 'mid', flowName: '防水膜作業', isSafetyPoint: true,
+        id: 'fl_2', phase: 'mid', flowName: '控制測量與放樣作業', isSafetyPoint: true,
         mgmtItems: [
           {
-            id: 'mg_3', name: '尖銳物修整平順', isStopPoint: false,
+            id: 'mg_3', name: '導線控制點檢測', isStopPoint: true,
             criteriaList: [
-              { id: 'cr_4', std: '表面無鬆動物質、雜物或外露鐵件', method: '目視', freq: '不定期', action: '改正', customRecord: '', note: '' }
+              { id: 'cr_3', std: '閉合差符合契約及測量規範要求', method: '經緯儀、水準儀', freq: '每次', action: '改正', customRecord: mainRec, note: '' }
             ]
           },
           {
-            id: 'mg_4', name: '非織布搭接', isStopPoint: false,
+            id: 'mg_4', name: '管線中心樁與高程放樣', isStopPoint: false,
             criteriaList: [
-              { id: 'cr_5', std: '搭接長度≧10cm', method: '捲尺', freq: '不定期', action: '改正', customRecord: '', note: '' },
-              { id: 'cr_6', std: '縱向接縫≦2 道/環', method: '目視', freq: '不定期', action: '改正', customRecord: '', note: '' }
-            ]
-          },
-          {
-            id: 'mg_5', name: '固定塊(熱熔墊片)間距、數量', isStopPoint: false,
-            criteriaList: [
-              { id: 'cr_7', std: '間距≦60cm，數量≧4 塊/m²', method: '捲尺', freq: '不定期', action: '改正', customRecord: '', note: '' }
-            ]
-          },
-          {
-            id: 'mg_6', name: '防水膜搭接', isStopPoint: true,
-            criteriaList: [
-              { id: 'cr_8', std: '以雙道熱溶接方式連接', method: '目視', freq: '每次', action: '改正', customRecord: '', note: '' },
-              { id: 'cr_9', std: '搭接長度≧8cm', method: '捲尺', freq: '每次', action: '改正', customRecord: '', note: '' },
-              { id: 'cr_10', std: '破裂修補處，其四周搭接長度≧15cm', method: '捲尺', freq: '每次', action: '改正', customRecord: '', note: '' }
-            ]
-          },
-          {
-            id: 'mg_7', name: '接縫抗拉強度取樣', isStopPoint: true,
-            criteriaList: [
-              { id: 'cr_11', std: '每 1,000m 取樣一組', method: '目視', freq: '每次', action: '改正', customRecord: '', note: '' }
-            ]
-          },
-          {
-            id: 'mg_8', name: '接縫密封檢驗', isStopPoint: true,
-            criteriaList: [
-              { id: 'cr_12', std: '□氣壓檢驗\n打入 1.0~2.0kgf/cm² 空氣壓力，維持 5 分鐘，壓力下降≦20%\n□真空罩檢驗\n以 0.2~0.5kgf/cm² 壓力抽出空氣，儀表指針不動，表示有破損', method: '空壓機/真空幫浦', freq: '每處', action: '改正', customRecord: '材料/設備品質抽驗紀錄表', note: '' }
-            ]
-          },
-          {
-            id: 'mg_9', name: '破損檢驗', isStopPoint: true,
-            criteriaList: [
-              { id: 'cr_13', std: '以 0.2~0.5kgf/cm² 壓力抽出空氣，儀表指針不動，表示有破損', method: '真空幫浦', freq: '每處', action: '改正', customRecord: '材料/設備品質抽驗紀錄表', note: '' }
+              { id: 'cr_4', std: '位置及高程誤差±10mm以內', method: '鋼捲尺、水準儀', freq: '不定期', action: '改正', customRecord: mainRec, note: '' }
             ]
           }
         ]
       },
       {
-        id: 'fl_3', phase: 'post', flowName: '清理及檢視', isSafetyPoint: true,
+        id: 'fl_3', phase: 'post', flowName: '成果整理與樁位保護', isSafetyPoint: false,
         mgmtItems: [
           {
-            id: 'mg_10', name: '場地整潔', isStopPoint: true,
+            id: 'mg_5', name: '控制樁位保護及紀錄備查', isStopPoint: true,
             criteriaList: [
-              { id: 'cr_14', std: '保持場地整潔，無雜物', method: '目視', freq: '每次', action: '改正', customRecord: '', note: '' }
+              { id: 'cr_5', std: '重要控制樁妥善保護並留存測量成果紀錄', method: '目視', freq: '每次', action: '改正', customRecord: mainRec, note: '' }
             ]
           }
         ]
@@ -692,7 +657,7 @@
   function saveStateToLocalStorage() {
     try {
       const stateObj = {
-        version: '12.0',
+        version: '13.0',
         savedAt: new Date().toISOString(),
         globalConfig: {
           stdTitle: document.getElementById('stdTitleInput').value,
@@ -803,7 +768,7 @@
 
     const stdInvalid = !stdVal || !hasNumberCode(stdVal);
     const chkInvalid = !chkVal || !hasNumberCode(chkVal);
-    const flowInvalid = !flowVal || !hasNumberCode(flowVal);
+    const flowInvalid = !flowVal;
 
     stdTitleEl.classList.toggle('input-error', stdInvalid);
     chkTitleEl.classList.toggle('input-error', chkInvalid);
@@ -813,9 +778,9 @@
     document.getElementById('err_chkTitle').style.display = chkInvalid ? 'inline-block' : 'none';
     document.getElementById('err_flowTitle').style.display = flowInvalid ? 'inline-block' : 'none';
 
-    if (stdInvalid) errors.push('右上角「1. 抽查標準表標題」尚未填寫或缺少表單編號！');
+    if (stdInvalid) errors.push('右上角「1. 抽查標準表編號與名稱」尚未填寫或缺少表單編號！');
     if (chkInvalid) errors.push('右上角「2. 施工抽查表編號與名稱」尚未填寫或缺少表單編號！');
-    if (flowInvalid) errors.push('右上角「3. 施工流程圖表頭編號與名稱」尚未填寫或缺少編號！');
+    if (flowInvalid) errors.push('右上角「3. 施工流程圖標題」尚未填寫！');
 
     const isoInvalid = !showIsoEl.checked || !isoCodeEl.value.trim();
     isoCodeEl.classList.toggle('input-error', isoInvalid);
@@ -921,7 +886,7 @@
     lastFocusedInput.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
-  // ==================== 右側安衛表單索引庫（左側加入複選核取方塊） ====================
+  // ==================== 右側安衛表單索引庫 ====================
   function renderSafetyFormsManager() {
     const container = document.getElementById('safetyFormsListContainer');
     container.innerHTML = '';
@@ -1007,7 +972,6 @@
       ];
 
       phases.forEach(p => {
-        // 每個施工階段上方顯示合併控制列：可一鍵勾選該階段是否帶入「本施工抽查表」
         const phaseCtrlTr = document.createElement('tr');
         phaseCtrlTr.className = 'phase-header-bar';
         phaseCtrlTr.innerHTML = `
@@ -1180,7 +1144,6 @@
               `;
               tr.appendChild(tdAction);
 
-              // 管理紀錄：勾選在階段上方合併控制，列內精簡為「其他表單」輸入框
               const tdRecord = document.createElement('td');
               tdRecord.className = groupColorCls;
               tdRecord.style.verticalAlign = 'middle';
@@ -1567,6 +1530,7 @@
     return flatRows;
   }
 
+  // ==================== 強化版外框處理（確保 Word 中跨列與各外緣儲存格粗外框不消失） ====================
   function applyWordOuterThickBorders(htmlString) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlString, 'text/html');
@@ -1640,21 +1604,35 @@
             widthStyle = `;width:${cmStr} !important;mso-width-alt:auto;`;
           }
 
-          const bTop = (minR === 0) ? '2.25pt solid #000000' : '0.75pt solid #000000';
-          const bBottom = (maxR === maxRows - 1) ? '2.25pt solid #000000' : '0.75pt solid #000000';
-          const bLeft = (minC === 0) ? '2.25pt solid #000000' : '0.75pt solid #000000';
-          const bRight = (maxC === maxCols - 1) ? '2.25pt solid #000000' : '0.75pt solid #000000';
+          // 需求 3：外緣四邊皆寫入明確的 2.25pt 實線與 mso-border 屬性，避免 Word 漏繪粗框
+          const isTopEdge = (minR === 0);
+          const isBottomEdge = (maxR === maxRows - 1);
+          const isLeftEdge = (minC === 0);
+          const isRightEdge = (maxC === maxCols - 1);
+
+          const bTop = isTopEdge ? '2.25pt solid #000000' : '0.75pt solid #000000';
+          const bBottom = isBottomEdge ? '2.25pt solid #000000' : '0.75pt solid #000000';
+          const bLeft = isLeftEdge ? '2.25pt solid #000000' : '0.75pt solid #000000';
+          const bRight = isRightEdge ? '2.25pt solid #000000' : '0.75pt solid #000000';
 
           const existingStyle = cell.getAttribute('style') || '';
-          const extraStyle = `${widthStyle};border-top:${bTop} !important;border-bottom:${bBottom} !important;border-left:${bLeft} !important;border-right:${bRight} !important;mso-border-top-alt:${bTop};mso-border-bottom-alt:${bBottom};mso-border-left-alt:${bLeft};mso-border-right-alt:${bRight};`;
+          const extraStyle = `${widthStyle};border-top:${bTop};border-bottom:${bBottom};border-left:${bLeft};border-right:${bRight};mso-border-top-alt:${bTop};mso-border-bottom-alt:${bBottom};mso-border-left-alt:${bLeft};mso-border-right-alt:${bRight};`;
           cell.setAttribute('style', existingStyle + extraStyle);
         }
       }
+
+      // 同時為表格設定整體外框樣式
+      const tStyle = table.getAttribute('style') || '';
+      table.setAttribute(
+        'style',
+        `${tStyle};border-top:2.25pt solid #000000;border-bottom:2.25pt solid #000000;border-left:2.25pt solid #000000;border-right:2.25pt solid #000000;mso-border-top-alt:2.25pt solid #000000;mso-border-bottom-alt:2.25pt solid #000000;mso-border-left-alt:2.25pt solid #000000;mso-border-right-alt:2.25pt solid #000000;`
+      );
     });
 
     return doc.body.innerHTML;
   }
 
+  // 需求 2：抽查標準表編號+名稱預設靠左、字體 12pt
   function generateStandardTableHtml() {
     const stdTitle = document.getElementById('stdTitleInput').value.trim() || '（請填寫抽查標準表標題）';
     const flatRows = buildFlattenedRows();
@@ -1703,7 +1681,7 @@
     });
 
     const rawHtml = `
-      <div style="text-align:center; font-family:'標楷體','DFKai-SB',serif; font-size:16pt; font-weight:bold; color:#000000; margin-bottom:8pt; line-height:1.0;">
+      <div align="left" style="text-align:left; font-family:'標楷體','DFKai-SB',serif; font-size:12pt; font-weight:bold; color:#000000; margin-bottom:6pt; line-height:1.0;">
         ${colorizeSymbolsHtml(stdTitle)}
       </div>
       <table class="word-table word-table-thick" border="1" cellspacing="0" cellpadding="4" style="width:100%; border-collapse:collapse; font-family:'標楷體','DFKai-SB',serif; font-size:12pt; line-height:1.0; table-layout:fixed; mso-table-layout-alt:fixed;">
@@ -2072,6 +2050,7 @@
     const breakIndex = splitTaskId ? sorted.findIndex(d => String(d.id) === String(splitTaskId)) : -1;
     const isDoubleCol = (breakIndex !== -1 && breakIndex < sorted.length - 1);
     const renderPhases = enablePhases;
+    // 需求 1：預設不加圖號，顯示「測量施工抽查流程圖」或輸入的流程圖標題
     const flowHeaderTitle = document.getElementById('flowTitleInput').value.trim() || '（請填寫抽查流程圖標題）';
 
     let startW = Math.round(nodeWidth * 0.8);
