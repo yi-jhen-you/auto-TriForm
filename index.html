@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>工程三階表單半自動生成系統 V9</title>
+  <title>工程三階表單半自動生成系統 V12</title>
   <style>
     * { box-sizing: border-box; font-family: "Microsoft JhengHei", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { margin: 0; padding: 0; background-color: #e2e8f0; color: #0f172a; font-size: 14px; }
@@ -74,7 +74,7 @@
     .val-ok { background: #dcfce7; border: 1.5px solid #86efac; color: #166534; }
     .val-err { background: #fef9c3; border: 2px solid #eab308; color: #854d0e; }
 
-    /* ==================== 所見即所得編輯大表格 (釘選表頭列 + 方案 B 管理項目整塊深淺交錯) ==================== */
+    /* ==================== 所見即所得編輯大表格 ==================== */
     .wysiwyg-table-wrap { border: 2.5px solid #000; background: #fff; }
     table.wysiwyg-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
     table.wysiwyg-table thead th {
@@ -95,33 +95,34 @@
     table.wysiwyg-table td { border-bottom: 1px solid #000; border-right: 1px solid #000; padding: 5px 5px; vertical-align: top; background: #fff; word-wrap: break-word; overflow-wrap: break-word; }
     table.wysiwyg-table td:last-child { border-right: none; }
 
-    /* 第 1 層：施工階段欄固定飽和底色 */
+    tr.phase-header-bar td {
+      background: #f1f5f9 !important;
+      color: #0f172a;
+      font-weight: 700;
+      font-size: 0.86rem;
+      padding: 6px 10px;
+      border-bottom: 1.5px solid #000;
+    }
+
     td.phase-cell-pre  { background-color: #93c5fd !important; color: #1e3a8a; font-weight: 700; text-align: center; vertical-align: middle !important; }
     td.phase-cell-mid  { background-color: #fcd34d !important; color: #78350f; font-weight: 700; text-align: center; vertical-align: middle !important; }
     td.phase-cell-post { background-color: #86efac !important; color: #14532d; font-weight: 700; text-align: center; vertical-align: middle !important; }
 
-    /* 第 2 層：施工工項欄柔和底色 */
     tr.row-phase-pre td.flow-cell  { background-color: #e0f2fe !important; }
     tr.row-phase-mid td.flow-cell  { background-color: #fef3c7 !important; }
     tr.row-phase-post td.flow-cell { background-color: #dcfce7 !important; }
 
-    /* ==================== 方案 B：依「管理項目(A)」整塊深淺交錯底色 ==================== */
-    /* 施工前 (藍系交錯) */
     td.b-pre-group-odd   { background-color: #bae6fd !important; }
     td.b-pre-group-even  { background-color: #f8fafc !important; }
-    /* 施工中 (暖橘系交錯 - 與防呆亮黃明確區隔) */
     td.b-mid-group-odd   { background-color: #fed7aa !important; }
     td.b-mid-group-even  { background-color: #fffaf5 !important; }
-    /* 施工後 (綠系交錯) */
     td.b-post-group-odd  { background-color: #bbf7d0 !important; }
     td.b-post-group-even { background-color: #f7fee7 !important; }
 
-    /* 輸入框微透明融入方案 B 區塊底色，聚焦打字時轉為純白底 */
     .cell-input { width: 100%; border: 1px solid rgba(15, 23, 42, 0.22) !important; background: rgba(255, 255, 255, 0.72) !important; padding: 4px 6px !important; font-size: 0.86rem !important; border-radius: 4px !important; color: #000; line-height: 1.25; resize: vertical; white-space: pre-wrap; word-break: break-word; transition: background-color 0.15s, border-color 0.15s; }
     .cell-input:hover { background: rgba(255, 255, 255, 0.9) !important; }
     .cell-input:focus { background: #ffffff !important; border-color: #2563eb !important; box-shadow: 0 0 0 2px rgba(37,99,235,0.2) !important; }
 
-    /* 拖曳手把與高亮線 */
     .drag-handle { cursor: grab; color: #334155; font-size: 0.82rem; user-select: none; padding: 2px 5px; border-radius: 4px; display: inline-block; font-weight: bold; background: rgba(255,255,255,0.85); border: 1px solid #94a3b8; }
     .drag-handle:hover { color: #0f172a; background: #cbd5e1; }
     .drag-handle:active { cursor: grabbing; }
@@ -129,29 +130,17 @@
     .drag-over-bottom { border-bottom: 4px solid #2563eb !important; }
     .drag-over-box { outline: 3px dashed #2563eb !important; outline-offset: -3px; background-color: #eff6ff !important; }
 
-    /* 安衛複選清單樣式 */
-    .safety-multi-box { margin-top: 5px; padding: 5px 6px; background: rgba(255,245,245,0.92); border: 1px solid #fca5a5; border-radius: 5px; text-align: left; font-size: 0.76rem; }
-    .safety-multi-item { display: flex; align-items: flex-start; gap: 4px; margin-bottom: 3px; cursor: pointer; color: #7f1d1d; font-weight: 600; line-height: 1.25; word-break: break-all; }
-    .safety-multi-item input { width: 14px; height: 14px; margin-top: 1px; accent-color: #dc2626; flex-shrink: 0; }
-
-    /* 極簡化管理紀錄欄樣式 */
-    .rec-compact-box { display: flex; flex-direction: column; gap: 4px; text-align: left; }
-    .rec-compact-top { display: flex; align-items: center; justify-content: space-between; gap: 4px; flex-wrap: wrap; }
-    .rec-badge-safety { display: inline-block; background: #fef2f2; border: 1px solid #fca5a5; color: #dc2626; padding: 1px 6px; border-radius: 4px; font-size: 0.74rem; font-weight: 700; cursor: help; }
-    .rec-chk-simple { display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; font-weight: 700; color: #1e40af; cursor: pointer; background: rgba(239,246,255,0.9); padding: 2px 6px; border-radius: 4px; border: 1px solid #93c5fd; }
-    .rec-chk-simple input { width: 14px; height: 14px; margin: 0; }
-
-    /* 防呆錯誤黃框樣式 */
     .input-error { border: 2px solid #eab308 !important; background-color: #fef08a !important; box-shadow: 0 0 0 2px rgba(234,179,8,0.25) !important; }
     .err-msg { color: #a16207; background: #fef08a; border: 1px solid #eab308; padding: 1px 4px; border-radius: 3px; font-size: 0.74rem; font-weight: 700; display: inline-block; margin-top: 2px; }
 
-    /* 右側安衛表單管理區 */
-    .safety-list { max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
-    .safety-item { display: flex; flex-direction: column; gap: 3px; background: #fff5f5; padding: 5px 7px; border-radius: 6px; border: 1px solid #fca5a5; }
-    .safety-item-row { display: flex; align-items: center; gap: 5px; }
+    /* 右側安衛表單索引庫（含左側複選框） */
+    .safety-list { max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+    .safety-item { display: flex; flex-direction: column; gap: 3px; background: #fff5f5; padding: 6px 7px; border-radius: 6px; border: 1px solid #fca5a5; }
+    .safety-item.selected-safety { background: #fee2e2; border-color: #f87171; }
+    .safety-item-row { display: flex; align-items: center; gap: 6px; }
+    .safety-item-row input[type="checkbox"] { width: 16px; height: 16px; accent-color: #dc2626; flex-shrink: 0; }
     .safety-item input[type="text"] { font-size: 0.82rem; font-weight: 700; color: #991b1b; padding: 4px 6px; border: 1px solid #fecaca; background: #fff; }
 
-    /* A4 預覽紙張 (12pt 字級、1.0 倍行高、純白無底色) */
     .paper-preview-wrapper { background: #cbd5e1; padding: 20px; border-radius: 8px; overflow-x: auto; display: flex; justify-content: center; }
     .paper-a4-portrait { background: #fff; width: 794px; min-height: 1123px; padding: 34px 40px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); color: #000; position: relative; }
     .paper-a4-landscape { background: #fff; width: 1080px; min-height: 720px; padding: 28px 30px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); color: #000; overflow: hidden; }
@@ -159,14 +148,12 @@
     .word-table { width: 100%; border-collapse: collapse; font-size: 12pt; line-height: 1.0; table-layout: fixed; }
     .word-table th, .word-table td { border: 0.75pt solid #000; padding: 4px 5px; vertical-align: middle; word-wrap: break-word; overflow-wrap: break-word; line-height: 1.0; font-size: 12pt; background: transparent; }
 
-    /* 頁籤 3 流程圖微調列 */
     .adjust-toolbar { display: flex; flex-wrap: wrap; gap: 12px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 9px 14px; align-items: center; }
     .stepper-item { display: flex; align-items: center; background: #fff; border: 1.5px solid #cbd5e1; border-radius: 6px; padding: 3px 8px; gap: 6px; }
     .stepper-label { font-size: 0.84rem; font-weight: 700; color: #475569; }
     .btn-step { width: 24px; height: 24px; border: 1px solid #cbd5e1; background: #f8fafc; border-radius: 4px; cursor: pointer; font-weight: bold; }
     .step-value { font-size: 0.85rem; font-weight: 700; min-width: 36px; text-align: center; }
 
-    /* 彈窗 */
     .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.55); display: none; justify-content: center; align-items: center; z-index: 1000; }
     .modal-box { background: #fff; border-radius: 10px; width: 740px; max-width: 95%; padding: 22px 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.25); }
     .modal-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 8px; }
@@ -213,7 +200,7 @@
               <span style="font-size:1.06rem; color:#1e293b;">📋 施工抽查標準表（管理項目採區塊深淺交錯，按住 <b style="color:#2563eb;">☰</b> 可跨階段或頭尾拖曳排序）</span>
             </div>
             <div style="display:flex; gap:8px;">
-              <button class="btn btn-primary" onclick="copyStandardTableToClipboard()">📋 複製標準表 (貼上 Word)</button>
+              <button class="btn btn-primary" onclick="copyStandardTable()">📋 複製標準表 (貼上 Word)</button>
               <button class="btn btn-success" onclick="downloadStandardDoc()">💾 下載標準表 (.doc)</button>
             </div>
           </div>
@@ -234,13 +221,12 @@
               <button type="button" class="sym-btn" onmousedown="insertSymbol(event, '%')">%</button>
             </div>
             <div style="font-size:0.8rem; color:#cbd5e1;">
-              💡 <b style="color:#60a5fa;">★ 檢驗停留點</b> 勾選於「管理項目(A)」，<b style="color:#f87171;">※ 安衛查驗點</b> 勾選於「施工工項」
+              💡 <b style="color:#60a5fa;">★ 檢驗停留點</b> 勾選於「管理項目(A)」，<b style="color:#f87171;">※ 安衛點</b> 勾選於「施工工項」
             </div>
           </div>
 
           <div id="validationBanner" class="validation-banner val-ok"></div>
 
-          <!-- 標題預覽列 (純黑色) -->
           <div id="editorTableHeading" style="text-align:center; font-family:'標楷體','DFKai-SB',serif; font-size:1.35rem; font-weight:bold; color:#000000; margin:8px 0;"></div>
 
           <div class="wysiwyg-table-wrap">
@@ -248,14 +234,14 @@
               <thead>
                 <tr>
                   <th style="width:54px;">階段</th>
-                  <th style="width:175px;">施工工項 (流程)<br><small style="color:#dc2626;">(勾選 ※ 安衛點可複選)</small></th>
+                  <th style="width:170px;">施工工項 (流程)<br><small style="color:#dc2626;">(勾選 ※ 安衛點)</small></th>
                   <th style="width:170px;">管理項目 (A)<br><small style="color:#0033CC;">(勾選 ★ 檢驗停留點)</small></th>
-                  <th style="width:230px;">抽查標準 (B)<br><small style="color:#475569;">(定量 / 定性標準)</small></th>
-                  <th style="width:50px;">抽查<br>時機</th>
+                  <th style="width:235px;">抽查標準 (B)<br><small style="color:#475569;">(定量 / 定性標準)</small></th>
+                  <th style="width:56px;">抽查<br>時機</th>
                   <th style="width:85px;">抽查方法</th>
                   <th style="width:85px;">抽查頻率<br><small style="color:#a16207;">(★禁填不定期)</small></th>
-                  <th style="width:82px;">不符合之<br>處置方法</th>
-                  <th style="width:155px;">管理紀錄<br><small style="color:#475569;">(勾選本表 / 填其他表)</small></th>
+                  <th style="width:88px;">不符合之<br>處置方法</th>
+                  <th style="width:150px;">管理紀錄<br><small style="color:#475569;">(階段勾選本表 / 填其他表)</small></th>
                   <th style="width:65px;">備註</th>
                   <th style="width:42px;">刪列</th>
                 </tr>
@@ -265,10 +251,10 @@
           </div>
         </div>
 
-        <!-- 抽查標準表 Word 即時預覽 (純白無底色) -->
+        <!-- 抽查標準表 Word 即時預覽 -->
         <div class="card">
           <div class="card-title">
-            <span>👁️ 抽查標準表 Word 輸出排版即時預覽（預覽與下載皆維持純白無底色、四邊粗外框）</span>
+            <span>👁️ 抽查標準表 Word 輸出排版即時預覽（貼上新標準表後會立即自動更新）</span>
           </div>
           <div class="paper-preview-wrapper">
             <div class="paper-a4-landscape word-doc-area" id="standardPreviewPaper"></div>
@@ -276,7 +262,7 @@
         </div>
       </div>
 
-      <!-- 右側欄：共用基本索引 + 安衛表單庫 -->
+      <!-- 右側欄：共用基本索引 + 安衛表單庫（左側複選框控制引用） -->
       <div class="right-sidebar">
         <div class="card card-blue">
           <div class="card-title" style="color:#0369a1;">
@@ -301,10 +287,10 @@
 
         <div class="card card-green">
           <div class="card-title" style="color:#15803d;">
-            <span><b style="color:#CC0000;">※</b> 安衛表單索引庫 (請補上計畫編號)</span>
+            <span><b style="color:#CC0000;">※</b> 安衛表單索引庫 (左側勾選引用)</span>
           </div>
           <p style="font-size:0.78rem; color:#475569; margin-top:0; margin-bottom:8px;">
-            被工項勾選使用的安衛表，請務必於名稱前方補上<b>表單編號</b>（未填編號將亮黃框提醒）：
+            放入全部安衛表單（可補上計畫編號）。<b>勾選左側方塊</b>即認定引用該表單，抽查表單底部與流程圖將同步顯示已勾選表單：
           </p>
           <div class="safety-list" id="safetyFormsListContainer"></div>
           <div style="display:flex; flex-direction:column; gap:6px;">
@@ -323,7 +309,7 @@
       <div class="card-title">
         <span>🛠️ 施工抽查表「表頭與附加區塊」自訂設定</span>
         <div style="display:flex; gap:8px;">
-          <button class="btn btn-primary" onclick="copyChecklistToClipboard()">📋 複製原生表格 (貼上 Word)</button>
+          <button class="btn btn-primary" onclick="copyChecklist()">📋 複製原生表格 (貼上 Word)</button>
           <button class="btn btn-success" onclick="downloadChecklistDoc()">💾 下載施工抽查表 (.doc)</button>
         </div>
       </div>
@@ -334,8 +320,15 @@
           <input type="text" id="chkPlanHeader" value="台灣世曦工程顧問股份有限公司" oninput="onChecklistHeaderInput()">
         </div>
         <div class="form-field" style="margin:0;">
-          <label>右上角品質文件編號：</label>
-          <input type="text" id="chkDocCode" value="" placeholder="選填 (如 QP-11103B-05-01)" oninput="onChecklistHeaderInput()">
+          <label style="display:flex; align-items:center; justify-content:space-between;">
+            <span>ISO品質文件編號 (右上角)：</span>
+            <label style="display:inline-flex; align-items:center; gap:4px; margin:0; cursor:pointer; color:#1e40af;">
+              <input type="checkbox" id="chkShowIsoCode" checked onchange="onChecklistHeaderInput()">
+              <span>顯示</span>
+            </label>
+          </label>
+          <input type="text" id="chkDocCode" value="QP-11103B-05-01" placeholder="請輸入 ISO品質文件編號 (如 QP-11103B-05-01)" oninput="onChecklistHeaderInput()">
+          <span id="err_isoCode" class="err-msg" style="display:none;">⚠ 請勾選顯示並填寫 ISO品質文件編號</span>
         </div>
         <div class="form-field" style="margin:0;">
           <label>工程名稱：</label>
@@ -378,7 +371,7 @@
       <div class="card-title">
         <span>📐 施工流程圖</span>
         <div style="display:flex; gap:8px;">
-          <button class="btn btn-primary" onclick="copyFlowVmlToClipboard()">📋 複製原生圖形 (貼上 Word)</button>
+          <button class="btn btn-primary" onclick="copyFlowVml()">📋 複製原生圖形 (貼上 Word)</button>
           <button class="btn btn-success" onclick="downloadFlowDoc()">💾 下載施工流程圖 (.doc)</button>
         </div>
       </div>
@@ -445,11 +438,11 @@
     <div class="modal-title">📋 智慧貼上 Word「抽查標準表」自動解析匯入</div>
     <p style="font-size:0.86rem; color:#475569; margin-top:0; line-height:1.5;">
       請在 Word 選取整張「抽查標準表」按 <code>Ctrl+C</code>，點擊下方虛線框按 <code>Ctrl+V</code> 貼上。<br>
-      ✨ <b>智慧歸位與防呆提醒</b>：匯入後系統會將 <b style="color:#0033CC;">★</b> 歸位至「管理項目(A)」、<b style="color:#CC0000;">※</b> 歸位至「施工工項」，並<b>自動清空右上角 3 個表單標題（亮起黃框提醒您輸入新表號）</b>，但會完整保留您的安衛表單索引庫！
+      ✨ <b>智慧歸位與防呆提醒</b>：系統會自動跳過重複表頭、依欄位名稱精準對應，並將 <b style="color:#0033CC;">★</b> 歸位至「管理項目(A)」、<b style="color:#CC0000;">※</b> 歸位至「施工工項」，同時<b>自動清空右上角 3 個表單標題（亮起黃框提醒您輸入新表號）</b>，並保留安衛表單索引庫！
     </p>
     <div id="pasteEditableArea" class="paste-editable" contenteditable="true"></div>
     <div style="display:flex; justify-content:space-between; align-items:center;">
-      <span style="font-size:0.8rem; color:#64748b;">匯入後可直接於左側表格內微調或拖曳順序</span>
+      <span style="font-size:0.8rem; color:#64748b;">匯入後主編輯表、下方預覽、抽查表單與流程圖將立即自動刷新</span>
       <div style="display:flex; gap:8px;">
         <button class="btn btn-outline" onclick="closePasteModal()">取消</button>
         <button class="btn btn-primary" onclick="parsePastedWordTable()">🚀 解析並正規化匯入</button>
@@ -461,37 +454,40 @@
 <div id="toastBox" class="toast-fixed"></div>
 
 <script>
-  // ==================== LocalStorage 金鑰與全域狀態 ====================
-  const STORAGE_KEY = 'THREE_TIER_FORM_SYSTEM_V8_STATE';
+  const STORAGE_KEY = 'THREE_TIER_FORM_SYSTEM_V12_STATE';
 
-  let safetyForms = [];
-  let appData = [];
-
-  // Word A4 標準邊界常數 (上下 2.54cm = 72pt、左右 3.18cm = 90pt；可印範圍 415pt × 698pt)
   const A4_PAGE_W_PT = 595;
   const A4_PAGE_H_PT = 842;
   const MARGIN_LEFT_PT = 90;
   const MARGIN_TOP_PT = 72;
   const SAFE_BOX_W_PT = 415;
   const SAFE_BOX_H_PT = 698;
-
-  let enablePhases = true;
-  let enableLegend = true;
-  let splitTaskId = null;
-  let nodeWidth = 136;
-  let nodeHeight = 36;
-  let fontSizePt = 10;
-  let verticalGap = 24;
   const PASS_VERTICAL_GAP = 24;
   const LEGEND_BOX_WIDTH = 397;
   const START_END_HEIGHT = 40;
   const CIRCLE_RADIUS = 9;
   const HEADER_TITLE_OFFSET = 28;
 
+  // 每張安衛表單物件包含：{ id, name, selected }
+  let safetyForms = [];
+  // 每個施工階段是否合併勾選「本施工抽查表」
+  let phaseMainFormChecked = { pre: false, mid: true, post: true };
+  let appData = [];
+
+  let flowSettings = {
+    enablePhases: true,
+    enableLegend: true,
+    splitTaskId: null,
+    nodeWidth: 136,
+    nodeHeight: 36,
+    fontSizePt: 10,
+    verticalGap: 24
+  };
+
   let lastFocusedInput = null;
   let dragState = { type: null, flowId: null, mgmtId: null };
 
-  window.onload = () => {
+  window.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('focusin', (e) => {
       if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') && e.target.type !== 'checkbox') {
         lastFocusedInput = e.target;
@@ -500,11 +496,12 @@
 
     const restored = loadStateFromLocalStorage();
     if (!restored) {
-      loadSampleData(true);
+      loadSampleData();
     } else {
       showToast('📂 已自動恢復您上次編輯的表單進度！');
     }
-  };
+    refreshAllViews(true);
+  });
 
   function renderPreservingScroll(renderFn) {
     const winX = window.scrollX;
@@ -513,7 +510,1063 @@
     window.scrollTo(winX, winY);
   }
 
-  // ==================== 嚴格計算表格 2D 矩陣並強制將每欄物理寬度與外粗框寫入每個 <td> ====================
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toastBox');
+    t.textContent = msg;
+    t.style.backgroundColor = isError ? '#b45309' : '#0f172a';
+    t.style.display = 'block';
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(() => { t.style.display = 'none'; }, 4500);
+  }
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/[&<>'"]/g, tag => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+    }[tag] || tag));
+  }
+
+  function colorizeSymbolsHtml(str) {
+    if (!str) return '';
+    let escaped = escapeHtml(str);
+    escaped = escaped.replace(/\r?\n/g, '<br/>');
+    escaped = escaped.replace(/★/g, '<span style="color:#0033CC;font-weight:bold;">★</span>');
+    escaped = escaped.replace(/※/g, '<span style="color:#CC0000;font-weight:bold;">※</span>');
+    return escaped;
+  }
+
+  function getPhaseLabel(ph) {
+    return ph === 'pre' ? '施工前' : (ph === 'post' ? '施工後' : '施工中');
+  }
+
+  function getDefaultActionByPhase(ph) {
+    return ph === 'pre' ? '不得施工' : '改正';
+  }
+
+  function hasNumberCode(str) {
+    return /\d/.test(String(str || ''));
+  }
+
+  // 取得「安衛表單索引庫中已被左側核取方塊勾選」且有填寫名稱的表單
+  function getCheckedSafetyFormNames() {
+    const anySafetyChecked = appData.some(f => !!f.isSafetyPoint);
+    if (!anySafetyChecked) return [];
+    return safetyForms
+      .filter(sf => !!sf.selected && (sf.name || '').trim())
+      .map(sf => sf.name.trim());
+  }
+
+  function composeRecordText(phaseKey, cr) {
+    const mainFormName = document.getElementById('chkFormTitleInput').value.trim() || '施工抽查紀錄表';
+    const parts = [];
+    if (phaseMainFormChecked[phaseKey] && mainFormName) {
+      parts.push(mainFormName);
+    }
+    if (cr.customRecord && cr.customRecord.trim()) {
+      parts.push(cr.customRecord.trim());
+    }
+    return parts.join('\n');
+  }
+
+  // ==================== 預設範例與狀態存取 ====================
+  function loadSampleData() {
+    safetyForms = [
+      { id: 'sf1', name: '一般作業停留點安全檢核表', selected: true },
+      { id: 'sf2', name: '局限空間作業安全抽查紀錄表', selected: false },
+      { id: 'sf3', name: '工地環境保護檢查記錄表', selected: false },
+      { id: 'sf4', name: '立即發生危險作業抽查表', selected: false }
+    ];
+    phaseMainFormChecked = { pre: false, mid: true, post: true };
+
+    document.getElementById('stdTitleInput').value = '表 02448 隧道防水膜施工抽查標準';
+    document.getElementById('chkFormTitleInput').value = '表 02448 隧道防水層施工抽查紀錄表';
+    document.getElementById('flowTitleInput').value = '02448 隧道防水層施工';
+    document.getElementById('chkPlanHeader').value = '台灣世曦工程顧問股份有限公司';
+    document.getElementById('chkShowIsoCode').checked = true;
+    document.getElementById('chkDocCode').value = 'QP-11103B-05-01';
+    document.getElementById('chkProjectName').value = '';
+    document.getElementById('chkSubProject').value = '';
+    document.getElementById('chkProofDocText').value = '施工圖';
+    document.getElementById('chkShowProofRow').checked = false;
+    document.getElementById('chkShowSafetyBottom').checked = true;
+    document.getElementById('chkShowDefectBottom').checked = true;
+
+    appData = [
+      {
+        id: 'fl_1', phase: 'pre', flowName: '施工前準備工作', isSafetyPoint: true,
+        mgmtItems: [
+          {
+            id: 'mg_1', name: '證明文件', isStopPoint: false,
+            criteriaList: [
+              { id: 'cr_1', std: '施工計畫核定文號', method: '文件查閱', freq: '每次', action: '不得施工', customRecord: '核備文件', note: '' },
+              { id: 'cr_2', std: '施工圖核定文號', method: '文件查閱', freq: '每次', action: '不得施工', customRecord: '核備文件', note: '' }
+            ]
+          },
+          {
+            id: 'mg_2', name: '材料進場', isStopPoint: true,
+            criteriaList: [
+              { id: 'cr_3', std: '合格材料(非織物、防水膜)抽驗紀錄', method: '文件查閱', freq: '每批', action: '不得施工', customRecord: '材料/設備品質抽驗紀錄表', note: '' }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'fl_2', phase: 'mid', flowName: '防水膜作業', isSafetyPoint: true,
+        mgmtItems: [
+          {
+            id: 'mg_3', name: '尖銳物修整平順', isStopPoint: false,
+            criteriaList: [
+              { id: 'cr_4', std: '表面無鬆動物質、雜物或外露鐵件', method: '目視', freq: '不定期', action: '改正', customRecord: '', note: '' }
+            ]
+          },
+          {
+            id: 'mg_4', name: '非織布搭接', isStopPoint: false,
+            criteriaList: [
+              { id: 'cr_5', std: '搭接長度≧10cm', method: '捲尺', freq: '不定期', action: '改正', customRecord: '', note: '' },
+              { id: 'cr_6', std: '縱向接縫≦2 道/環', method: '目視', freq: '不定期', action: '改正', customRecord: '', note: '' }
+            ]
+          },
+          {
+            id: 'mg_5', name: '固定塊(熱熔墊片)間距、數量', isStopPoint: false,
+            criteriaList: [
+              { id: 'cr_7', std: '間距≦60cm，數量≧4 塊/m²', method: '捲尺', freq: '不定期', action: '改正', customRecord: '', note: '' }
+            ]
+          },
+          {
+            id: 'mg_6', name: '防水膜搭接', isStopPoint: true,
+            criteriaList: [
+              { id: 'cr_8', std: '以雙道熱溶接方式連接', method: '目視', freq: '每次', action: '改正', customRecord: '', note: '' },
+              { id: 'cr_9', std: '搭接長度≧8cm', method: '捲尺', freq: '每次', action: '改正', customRecord: '', note: '' },
+              { id: 'cr_10', std: '破裂修補處，其四周搭接長度≧15cm', method: '捲尺', freq: '每次', action: '改正', customRecord: '', note: '' }
+            ]
+          },
+          {
+            id: 'mg_7', name: '接縫抗拉強度取樣', isStopPoint: true,
+            criteriaList: [
+              { id: 'cr_11', std: '每 1,000m 取樣一組', method: '目視', freq: '每次', action: '改正', customRecord: '', note: '' }
+            ]
+          },
+          {
+            id: 'mg_8', name: '接縫密封檢驗', isStopPoint: true,
+            criteriaList: [
+              { id: 'cr_12', std: '□氣壓檢驗\n打入 1.0~2.0kgf/cm² 空氣壓力，維持 5 分鐘，壓力下降≦20%\n□真空罩檢驗\n以 0.2~0.5kgf/cm² 壓力抽出空氣，儀表指針不動，表示有破損', method: '空壓機/真空幫浦', freq: '每處', action: '改正', customRecord: '材料/設備品質抽驗紀錄表', note: '' }
+            ]
+          },
+          {
+            id: 'mg_9', name: '破損檢驗', isStopPoint: true,
+            criteriaList: [
+              { id: 'cr_13', std: '以 0.2~0.5kgf/cm² 壓力抽出空氣，儀表指針不動，表示有破損', method: '真空幫浦', freq: '每處', action: '改正', customRecord: '材料/設備品質抽驗紀錄表', note: '' }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'fl_3', phase: 'post', flowName: '清理及檢視', isSafetyPoint: true,
+        mgmtItems: [
+          {
+            id: 'mg_10', name: '場地整潔', isStopPoint: true,
+            criteriaList: [
+              { id: 'cr_14', std: '保持場地整潔，無雜物', method: '目視', freq: '每次', action: '改正', customRecord: '', note: '' }
+            ]
+          }
+        ]
+      }
+    ];
+
+    flowSettings = {
+      enablePhases: true,
+      enableLegend: true,
+      splitTaskId: null,
+      nodeWidth: 136,
+      nodeHeight: 36,
+      fontSizePt: 10,
+      verticalGap: 24
+    };
+    document.getElementById('enablePhasesCheckbox').checked = true;
+    document.getElementById('enableLegendCheckbox').checked = true;
+    document.getElementById('valWidth').textContent = '136pt';
+    document.getElementById('valHeight').textContent = '36pt';
+    document.getElementById('valFont').textContent = '10pt';
+    document.getElementById('valGap').textContent = '24pt';
+  }
+
+  function saveStateToLocalStorage() {
+    try {
+      const stateObj = {
+        version: '12.0',
+        savedAt: new Date().toISOString(),
+        globalConfig: {
+          stdTitle: document.getElementById('stdTitleInput').value,
+          chkFormTitle: document.getElementById('chkFormTitleInput').value,
+          flowTitle: document.getElementById('flowTitleInput').value
+        },
+        checklistHeader: {
+          planHeader: document.getElementById('chkPlanHeader').value,
+          showIsoCode: document.getElementById('chkShowIsoCode').checked,
+          docCode: document.getElementById('chkDocCode').value,
+          projectName: document.getElementById('chkProjectName').value,
+          subProject: document.getElementById('chkSubProject').value,
+          proofDocText: document.getElementById('chkProofDocText').value,
+          showProofRow: document.getElementById('chkShowProofRow').checked,
+          showSafetyBottom: document.getElementById('chkShowSafetyBottom').checked,
+          showDefectBottom: document.getElementById('chkShowDefectBottom').checked
+        },
+        phaseMainFormChecked: { ...phaseMainFormChecked },
+        flowSettings: { ...flowSettings },
+        safetyForms,
+        appData
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(stateObj));
+      const now = new Date();
+      const ind = document.getElementById('autosaveStatus');
+      if (ind) ind.textContent = `💾 已自動暫存 (${now.toTimeString().split(' ')[0]})`;
+    } catch (e) {
+      console.warn('LocalStorage 儲存失敗:', e);
+    }
+  }
+
+  function loadStateFromLocalStorage() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return false;
+      const saved = JSON.parse(raw);
+      if (!saved || !Array.isArray(saved.appData)) return false;
+
+      if (saved.globalConfig) {
+        document.getElementById('stdTitleInput').value = saved.globalConfig.stdTitle ?? '';
+        document.getElementById('chkFormTitleInput').value = saved.globalConfig.chkFormTitle ?? '';
+        document.getElementById('flowTitleInput').value = saved.globalConfig.flowTitle ?? '';
+      }
+      if (saved.checklistHeader) {
+        document.getElementById('chkPlanHeader').value = saved.checklistHeader.planHeader ?? '';
+        document.getElementById('chkShowIsoCode').checked = saved.checklistHeader.showIsoCode !== false;
+        document.getElementById('chkDocCode').value = saved.checklistHeader.docCode ?? '';
+        document.getElementById('chkProjectName').value = saved.checklistHeader.projectName ?? '';
+        document.getElementById('chkSubProject').value = saved.checklistHeader.subProject ?? '';
+        document.getElementById('chkProofDocText').value = saved.checklistHeader.proofDocText ?? '';
+        document.getElementById('chkShowProofRow').checked = !!saved.checklistHeader.showProofRow;
+        document.getElementById('chkShowSafetyBottom').checked = saved.checklistHeader.showSafetyBottom !== false;
+        document.getElementById('chkShowDefectBottom').checked = saved.checklistHeader.showDefectBottom !== false;
+      }
+      if (saved.phaseMainFormChecked) {
+        phaseMainFormChecked = {
+          pre: !!saved.phaseMainFormChecked.pre,
+          mid: !!saved.phaseMainFormChecked.mid,
+          post: !!saved.phaseMainFormChecked.post
+        };
+      }
+      if (saved.flowSettings) {
+        flowSettings = {
+          enablePhases: saved.flowSettings.enablePhases !== false,
+          enableLegend: saved.flowSettings.enableLegend !== false,
+          splitTaskId: saved.flowSettings.splitTaskId || null,
+          nodeWidth: Number(saved.flowSettings.nodeWidth) || 136,
+          nodeHeight: Number(saved.flowSettings.nodeHeight) || 36,
+          fontSizePt: Number(saved.flowSettings.fontSizePt) || 10,
+          verticalGap: Number(saved.flowSettings.verticalGap) || 24
+        };
+        document.getElementById('enablePhasesCheckbox').checked = flowSettings.enablePhases;
+        document.getElementById('enableLegendCheckbox').checked = flowSettings.enableLegend;
+        document.getElementById('valWidth').textContent = flowSettings.nodeWidth + 'pt';
+        document.getElementById('valHeight').textContent = flowSettings.nodeHeight + 'pt';
+        document.getElementById('valFont').textContent = flowSettings.fontSizePt + 'pt';
+        document.getElementById('valGap').textContent = flowSettings.verticalGap + 'pt';
+      }
+      safetyForms = Array.isArray(saved.safetyForms) ? saved.safetyForms.map(sf => ({ ...sf, selected: !!sf.selected })) : [];
+      appData = saved.appData;
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function confirmResetSample() {
+    if (confirm('確定要重置為預設範例嗎？')) {
+      loadSampleData();
+      refreshAllViews(true);
+      showToast('已重置為預設範例資料！');
+    }
+  }
+
+  // ==================== 防呆檢核 ====================
+  function validateAllData() {
+    const errors = [];
+
+    const stdTitleEl = document.getElementById('stdTitleInput');
+    const chkTitleEl = document.getElementById('chkFormTitleInput');
+    const flowTitleEl = document.getElementById('flowTitleInput');
+    const showIsoEl = document.getElementById('chkShowIsoCode');
+    const isoCodeEl = document.getElementById('chkDocCode');
+
+    const stdVal = stdTitleEl.value.trim();
+    const chkVal = chkTitleEl.value.trim();
+    const flowVal = flowTitleEl.value.trim();
+
+    const stdInvalid = !stdVal || !hasNumberCode(stdVal);
+    const chkInvalid = !chkVal || !hasNumberCode(chkVal);
+    const flowInvalid = !flowVal || !hasNumberCode(flowVal);
+
+    stdTitleEl.classList.toggle('input-error', stdInvalid);
+    chkTitleEl.classList.toggle('input-error', chkInvalid);
+    flowTitleEl.classList.toggle('input-error', flowInvalid);
+
+    document.getElementById('err_stdTitle').style.display = stdInvalid ? 'inline-block' : 'none';
+    document.getElementById('err_chkTitle').style.display = chkInvalid ? 'inline-block' : 'none';
+    document.getElementById('err_flowTitle').style.display = flowInvalid ? 'inline-block' : 'none';
+
+    if (stdInvalid) errors.push('右上角「1. 抽查標準表標題」尚未填寫或缺少表單編號！');
+    if (chkInvalid) errors.push('右上角「2. 施工抽查表編號與名稱」尚未填寫或缺少表單編號！');
+    if (flowInvalid) errors.push('右上角「3. 施工流程圖表頭編號與名稱」尚未填寫或缺少編號！');
+
+    const isoInvalid = !showIsoEl.checked || !isoCodeEl.value.trim();
+    isoCodeEl.classList.toggle('input-error', isoInvalid);
+    document.getElementById('err_isoCode').style.display = isoInvalid ? 'inline-block' : 'none';
+    if (!showIsoEl.checked) {
+      errors.push('頁籤 2「ISO品質文件編號」尚未勾選顯示！');
+    } else if (!isoCodeEl.value.trim()) {
+      errors.push('頁籤 2 已勾選顯示「ISO品質文件編號」，但尚未填寫編號內容！');
+    }
+
+    if (appData.some(f => !!f.isSafetyPoint)) {
+      safetyForms.forEach(sf => {
+        if (sf.selected && (sf.name || '').trim() && !hasNumberCode(sf.name)) {
+          errors.push(`右側已勾選引用的安衛表單「${sf.name}」缺少表單編號(數字)！`);
+        }
+      });
+    }
+
+    appData.forEach(flow => {
+      if (!flow.flowName.trim()) {
+        errors.push(`【${getPhaseLabel(flow.phase)}】有施工工項名稱空白`);
+      }
+      flow.mgmtItems.forEach(mgmt => {
+        if (!mgmt.name.trim()) {
+          errors.push(`「${flow.flowName}」底下有管理項目(A)名稱空白`);
+        }
+        mgmt.criteriaList.forEach(cr => {
+          if (!cr.std.trim()) {
+            errors.push(`管理項目「${mgmt.name || '未命名'}」的抽查標準(B)不可空白`);
+          }
+          if (!cr.freq.trim()) {
+            errors.push(`管理項目「${mgmt.name || '未命名'}」的抽查頻率不可空白`);
+          }
+          if (mgmt.isStopPoint && cr.freq.includes('不定期')) {
+            errors.push(`【停留點防呆】管理項目「★ ${mgmt.name}」為檢驗停留點，抽查頻率不可填「${cr.freq}」！`);
+          }
+        });
+      });
+    });
+
+    const banner = document.getElementById('validationBanner');
+    const badge = document.getElementById('navBadge');
+    if (errors.length === 0) {
+      banner.className = 'validation-banner val-ok';
+      banner.innerHTML = `✅ 防呆檢核通過：所有標題編號、ISO文件編號、安衛表編號與檢驗停留點頻率皆符合規範！`;
+      badge.className = 'tab-badge badge-ok';
+      badge.textContent = '✓ 檢核通過';
+    } else {
+      banner.className = 'validation-banner val-err';
+      banner.innerHTML = `
+        <div>⚠️ 發現 ${errors.length} 項防呆提醒（請修正黃色警示框處）：</div>
+        <ul style="margin:4px 0 0 0; padding-left:20px; font-size:0.82rem;">
+          ${errors.slice(0, 5).map(e => `<li>${escapeHtml(e)}</li>`).join('')}
+          ${errors.length > 5 ? `<li>...還有 ${errors.length - 5} 項提醒</li>` : ''}
+        </ul>
+      `;
+      badge.className = 'tab-badge badge-err';
+      badge.textContent = `⚠ ${errors.length} 提醒`;
+    }
+    return errors;
+  }
+
+  // ==================== 頁籤切換與全域同步 ====================
+  function switchTab(tabIdx) {
+    [1, 2, 3].forEach(i => {
+      document.getElementById('tabBtn' + i).classList.toggle('active', i === tabIdx);
+      document.getElementById('tabPane' + i).classList.toggle('active', i === tabIdx);
+    });
+    renderStandardPreview();
+    renderChecklistPreview();
+    updateFlowBreakDropdown();
+    updateDiagram();
+  }
+
+  function syncGlobalConfig() {
+    const stdVal = document.getElementById('stdTitleInput').value.trim() || '（請填寫抽查標準表標題）';
+    document.getElementById('editorTableHeading').innerHTML = colorizeSymbolsHtml(stdVal);
+    validateAllData();
+    renderStandardPreview();
+    renderChecklistPreview();
+    updateDiagram();
+    saveStateToLocalStorage();
+  }
+
+  function onChecklistHeaderInput() {
+    validateAllData();
+    renderChecklistPreview();
+    saveStateToLocalStorage();
+  }
+
+  function insertSymbol(e, sym) {
+    e.preventDefault();
+    if (!lastFocusedInput) {
+      showToast('請先點選表格內的文字框，再點擊符號按鈕！', true);
+      return;
+    }
+    const start = lastFocusedInput.selectionStart || 0;
+    const end = lastFocusedInput.selectionEnd || 0;
+    const val = lastFocusedInput.value || '';
+    lastFocusedInput.value = val.substring(0, start) + sym + val.substring(end);
+    lastFocusedInput.selectionStart = lastFocusedInput.selectionEnd = start + sym.length;
+    lastFocusedInput.focus();
+    lastFocusedInput.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  // ==================== 右側安衛表單索引庫（左側加入複選核取方塊） ====================
+  function renderSafetyFormsManager() {
+    const container = document.getElementById('safetyFormsListContainer');
+    container.innerHTML = '';
+    if (safetyForms.length === 0) {
+      container.innerHTML = `<div style="color:#94a3b8; font-size:0.82rem; padding:4px;">目前無安衛表單，請由下方新增</div>`;
+      return;
+    }
+    const anySafetyChecked = appData.some(f => !!f.isSafetyPoint);
+    safetyForms.forEach(sf => {
+      const missingCode = anySafetyChecked && sf.selected && (sf.name || '').trim() && !hasNumberCode(sf.name);
+      const div = document.createElement('div');
+      div.className = `safety-item ${sf.selected ? 'selected-safety' : ''}`;
+      div.innerHTML = `
+        <div class="safety-item-row">
+          <input type="checkbox" ${sf.selected ? 'checked' : ''} onchange="toggleSafetyFormSelected('${sf.id}', this.checked)" title="勾選表示引用此安衛表單">
+          <b style="color:#CC0000; flex-shrink:0;">※</b>
+          <input type="text" id="sf_inp_${sf.id}" class="${missingCode ? 'input-error' : ''}" value="${escapeHtml(sf.name)}" oninput="updateSafetyFormName('${sf.id}', this.value)" title="直接修改安衛表單編號與名稱">
+          <button class="btn-danger-ghost" onclick="removeSafetyForm('${sf.id}')" title="刪除此安衛表">✕</button>
+        </div>
+        <span id="sf_err_${sf.id}" class="err-msg" style="display:${missingCode ? 'inline-block' : 'none'};">⚠ 已勾選引用，請補上表單編號(數字)</span>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function toggleSafetyFormSelected(sfId, checked) {
+    const sf = safetyForms.find(s => s.id === sfId);
+    if (!sf) return;
+    sf.selected = checked;
+    refreshAllViews();
+  }
+
+  function updateSafetyFormName(sfId, newName) {
+    const sf = safetyForms.find(s => s.id === sfId);
+    if (!sf) return;
+    sf.name = newName;
+    const anySafetyChecked = appData.some(f => !!f.isSafetyPoint);
+    const missingCode = anySafetyChecked && sf.selected && newName.trim() && !hasNumberCode(newName);
+    const inp = document.getElementById('sf_inp_' + sfId);
+    const err = document.getElementById('sf_err_' + sfId);
+    if (inp) inp.classList.toggle('input-error', missingCode);
+    if (err) err.style.display = missingCode ? 'inline-block' : 'none';
+
+    validateAllData();
+    renderStandardPreview();
+    renderChecklistPreview();
+    updateDiagram();
+    saveStateToLocalStorage();
+  }
+
+  function addSafetyForm() {
+    const inp = document.getElementById('newSafetyFormInput');
+    const val = inp.value.trim();
+    if (!val) return;
+    safetyForms.push({ id: 'sf_' + Date.now(), name: val, selected: true });
+    inp.value = '';
+    refreshAllViews();
+    showToast(`已新增安衛表單：${val}`);
+  }
+
+  function removeSafetyForm(id) {
+    safetyForms = safetyForms.filter(s => s.id !== id);
+    refreshAllViews();
+  }
+
+  function togglePhaseMainForm(phaseKey, checked) {
+    phaseMainFormChecked[phaseKey] = checked;
+    refreshAllViews();
+  }
+
+  // ==================== 抽查標準表編輯器渲染 ====================
+  function renderStandardEditor() {
+    renderPreservingScroll(() => {
+      const stdVal = document.getElementById('stdTitleInput').value.trim() || '（請填寫抽查標準表標題）';
+      document.getElementById('editorTableHeading').innerHTML = colorizeSymbolsHtml(stdVal);
+      const tbody = document.getElementById('wysiwygTbody');
+      tbody.innerHTML = '';
+
+      const phases = [
+        { key: 'pre', label: '施工前', cellCls: 'phase-cell-pre', rowCls: 'row-phase-pre' },
+        { key: 'mid', label: '施工中', cellCls: 'phase-cell-mid', rowCls: 'row-phase-mid' },
+        { key: 'post', label: '施工後', cellCls: 'phase-cell-post', rowCls: 'row-phase-post' }
+      ];
+
+      phases.forEach(p => {
+        // 每個施工階段上方顯示合併控制列：可一鍵勾選該階段是否帶入「本施工抽查表」
+        const phaseCtrlTr = document.createElement('tr');
+        phaseCtrlTr.className = 'phase-header-bar';
+        phaseCtrlTr.innerHTML = `
+          <td colspan="11">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+              <span>【${p.label}】階段管理紀錄合併設定：
+                <label style="cursor:pointer; margin-left:8px; color:#1e40af; display:inline-flex; align-items:center; gap:5px; background:#eff6ff; padding:2px 8px; border-radius:4px; border:1px solid #93c5fd;">
+                  <input type="checkbox" ${phaseMainFormChecked[p.key] ? 'checked' : ''} onchange="togglePhaseMainForm('${p.key}', this.checked)">
+                  <span>${p.label}整段帶入「本施工抽查表」</span>
+                </label>
+              </span>
+              <span style="font-size:0.78rem; color:#64748b; font-weight:normal;">若個別列需指定其他表單，可於該列「管理紀錄」填入</span>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(phaseCtrlTr);
+
+        const flowsInPhase = appData.filter(f => f.phase === p.key);
+
+        if (flowsInPhase.length === 0) {
+          const tr = document.createElement('tr');
+          tr.className = p.rowCls;
+          tr.innerHTML = `
+            <td class="${p.cellCls}">
+              <div style="font-size:1rem; line-height:1.35; margin-bottom:6px;">${p.label.split('').join('<br>')}</div>
+              <button class="btn btn-primary btn-xs" onclick="addFlow('${p.key}')">＋工項</button>
+            </td>
+            <td colspan="10" style="text-align:center; color:#475569; padding:18px; font-weight:700; vertical-align:middle;">
+              📥 目前【${p.label}】尚無工項，可點左側「＋工項」新增，或直接將其他工項拖曳至此處放入
+            </td>
+          `;
+          bindPhaseEmptyDropEvents(tr, p.key);
+          tbody.appendChild(tr);
+          return;
+        }
+
+        let phaseTotalRows = 0;
+        flowsInPhase.forEach(f => f.mgmtItems.forEach(m => { phaseTotalRows += m.criteriaList.length; }));
+
+        let phaseCellRendered = false;
+        let phaseMgmtGroupCounter = 0;
+
+        flowsInPhase.forEach((flow) => {
+          let flowTotalRows = 0;
+          flow.mgmtItems.forEach(m => { flowTotalRows += m.criteriaList.length; });
+          let flowCellRendered = false;
+
+          flow.mgmtItems.forEach((mgmt) => {
+            phaseMgmtGroupCounter++;
+            const isOddGroup = (phaseMgmtGroupCounter % 2 === 1);
+            const groupColorCls = `b-${p.key}-group-${isOddGroup ? 'odd' : 'even'}`;
+
+            const mgmtTotalRows = mgmt.criteriaList.length;
+            let mgmtCellRendered = false;
+
+            mgmt.criteriaList.forEach((cr) => {
+              const tr = document.createElement('tr');
+              tr.className = p.rowCls;
+
+              if (!phaseCellRendered) {
+                const tdPhase = document.createElement('td');
+                tdPhase.className = p.cellCls;
+                tdPhase.rowSpan = phaseTotalRows;
+                tdPhase.innerHTML = `
+                  <div style="font-size:1.02rem; line-height:1.35; margin-bottom:10px;">${p.label.split('').join('<br>')}</div>
+                  <button class="btn btn-primary btn-xs" onclick="addFlow('${p.key}')" title="在${p.label}新增施工工項">＋工項</button>
+                `;
+                bindPhaseHeaderDropEvents(tdPhase, p.key);
+                tr.appendChild(tdPhase);
+                phaseCellRendered = true;
+              }
+
+              if (!flowCellRendered) {
+                const tdFlow = document.createElement('td');
+                tdFlow.className = 'flow-cell';
+                tdFlow.rowSpan = flowTotalRows;
+                tdFlow.dataset.flowId = flow.id;
+
+                tdFlow.innerHTML = `
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
+                    <span class="drag-handle" title="按住上下拖曳此施工工項順序">☰ 拖曳工項</span>
+                    <button class="btn-danger-ghost" onclick="deleteFlow('${flow.id}')" title="刪除此施工工項">✕</button>
+                  </div>
+                  <div style="display:flex; align-items:flex-start; gap:3px; margin-bottom:6px;">
+                    ${flow.isSafetyPoint ? '<span style="color:#CC0000;font-weight:bold;font-size:1rem;margin-top:4px;">※</span>' : ''}
+                    <textarea id="inp_flow_${flow.id}" rows="2" class="cell-input ${!flow.flowName.trim() ? 'input-error' : ''}" style="font-weight:700;" placeholder="施工工項名稱" oninput="onFlowNameInput('${flow.id}', this.value)">${escapeHtml(flow.flowName)}</textarea>
+                  </div>
+                  <div style="display:flex; align-items:center; justify-content:space-between; gap:4px; flex-wrap:wrap;">
+                    <label style="cursor:pointer; font-size:0.78rem; font-weight:700; color:#b91c1c; display:inline-flex; align-items:center; gap:4px; background:rgba(255,255,255,0.9); padding:2px 6px; border-radius:4px; border:1px solid #fca5a5;">
+                      <input type="checkbox" ${flow.isSafetyPoint ? 'checked' : ''} onchange="toggleFlowSafety('${flow.id}', this.checked)">
+                      <span><b style="color:#CC0000;">※</b> 安衛點</span>
+                    </label>
+                    <button class="btn btn-outline btn-xs" onclick="addMgmtItem('${flow.id}')" title="在此工項新增管理項目(A)">＋管理項目</button>
+                  </div>
+                `;
+
+                bindDragEvents(tdFlow, 'flow', flow.id, null);
+                tr.appendChild(tdFlow);
+                flowCellRendered = true;
+              }
+
+              if (!mgmtCellRendered) {
+                const tdMgmt = document.createElement('td');
+                tdMgmt.className = groupColorCls;
+                tdMgmt.rowSpan = mgmtTotalRows;
+                tdMgmt.dataset.flowId = flow.id;
+                tdMgmt.dataset.mgmtId = mgmt.id;
+
+                tdMgmt.innerHTML = `
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
+                    <span class="drag-handle" title="按住上下拖曳此管理項目順序">☰ 拖曳</span>
+                    <div style="display:flex; gap:4px;">
+                      <button class="btn btn-outline btn-xs" onclick="addCriteria('${flow.id}','${mgmt.id}')" title="新增一列抽查標準(B)">＋標準列</button>
+                      <button class="btn-danger-ghost" onclick="deleteMgmtItem('${flow.id}','${mgmt.id}')" title="刪除此管理項目">✕</button>
+                    </div>
+                  </div>
+                  <div style="display:flex; align-items:flex-start; gap:3px; margin-bottom:6px;">
+                    ${mgmt.isStopPoint ? '<span style="color:#0033CC;font-weight:bold;font-size:1rem;margin-top:4px;">★</span>' : ''}
+                    <textarea id="inp_mgmt_${mgmt.id}" rows="2" class="cell-input ${!mgmt.name.trim() ? 'input-error' : ''}" style="font-weight:700;" placeholder="管理項目(A)" oninput="onMgmtNameInput('${flow.id}','${mgmt.id}', this.value)">${escapeHtml(mgmt.name)}</textarea>
+                  </div>
+                  <label style="cursor:pointer; font-size:0.78rem; font-weight:700; color:#1e40af; display:inline-flex; align-items:center; gap:4px; background:rgba(255,255,255,0.88); padding:2px 7px; border-radius:4px; border:1px solid #93c5fd;">
+                    <input type="checkbox" ${mgmt.isStopPoint ? 'checked' : ''} onchange="toggleMgmtStopPoint('${flow.id}','${mgmt.id}', this.checked)">
+                    <span><b style="color:#0033CC;">★</b> 檢驗停留點</span>
+                  </label>
+                `;
+
+                bindDragEvents(tdMgmt, 'mgmt', flow.id, mgmt.id);
+                tr.appendChild(tdMgmt);
+                mgmtCellRendered = true;
+              }
+
+              const isFreqInvalid = (!cr.freq.trim()) || (mgmt.isStopPoint && cr.freq.includes('不定期'));
+              const isStdInvalid = !cr.std.trim();
+
+              const tdStd = document.createElement('td');
+              tdStd.className = groupColorCls;
+              tdStd.innerHTML = `<textarea id="inp_std_${cr.id}" rows="${cr.std.includes('\n') ? 4 : 2}" class="cell-input ${isStdInvalid ? 'input-error' : ''}" placeholder="輸入抽查標準(B)" oninput="onCriteriaInput('${flow.id}','${mgmt.id}','${cr.id}','std',this.value)">${escapeHtml(cr.std)}</textarea>`;
+              tr.appendChild(tdStd);
+
+              const tdTiming = document.createElement('td');
+              tdTiming.className = groupColorCls;
+              tdTiming.style.textAlign = 'center';
+              tdTiming.style.verticalAlign = 'middle';
+              tdTiming.style.fontWeight = '700';
+              tdTiming.style.color = '#1e293b';
+              tdTiming.textContent = p.label;
+              tr.appendChild(tdTiming);
+
+              const tdMethod = document.createElement('td');
+              tdMethod.className = groupColorCls;
+              tdMethod.innerHTML = `<textarea rows="2" class="cell-input" style="text-align:center;" placeholder="如：目視" oninput="onCriteriaInput('${flow.id}','${mgmt.id}','${cr.id}','method',this.value)">${escapeHtml(cr.method)}</textarea>`;
+              tr.appendChild(tdMethod);
+
+              const tdFreq = document.createElement('td');
+              tdFreq.className = groupColorCls;
+              tdFreq.innerHTML = `
+                <textarea id="inp_freq_${cr.id}" rows="2" class="cell-input ${isFreqInvalid ? 'input-error' : ''}" style="text-align:center;" placeholder="如：每次" oninput="onCriteriaInput('${flow.id}','${mgmt.id}','${cr.id}','freq',this.value)">${escapeHtml(cr.freq)}</textarea>
+                <span id="err_freq_${cr.id}" class="err-msg" style="display:${(mgmt.isStopPoint && cr.freq.includes('不定期')) ? 'inline-block' : 'none'};">⚠ 停留點禁填不定期</span>
+              `;
+              tr.appendChild(tdFreq);
+
+              const tdAction = document.createElement('td');
+              tdAction.className = groupColorCls;
+              tdAction.style.verticalAlign = 'middle';
+              tdAction.innerHTML = `
+                <select class="cell-input" style="text-align:center; font-weight:700;" onchange="onCriteriaInput('${flow.id}','${mgmt.id}','${cr.id}','action',this.value)">
+                  <option value="不得施工" ${cr.action === '不得施工' ? 'selected' : ''}>不得施工</option>
+                  <option value="改正" ${cr.action === '改正' ? 'selected' : ''}>改正</option>
+                </select>
+              `;
+              tr.appendChild(tdAction);
+
+              // 管理紀錄：勾選在階段上方合併控制，列內精簡為「其他表單」輸入框
+              const tdRecord = document.createElement('td');
+              tdRecord.className = groupColorCls;
+              tdRecord.style.verticalAlign = 'middle';
+              tdRecord.innerHTML = `
+                <div class="rec-compact-box">
+                  <textarea rows="2" class="cell-input" placeholder="${phaseMainFormChecked[p.key] ? '已帶入本施工抽查表（可另填其他表單）' : '其他表單 (如：核備文件)'}" oninput="onCriteriaInput('${flow.id}','${mgmt.id}','${cr.id}','customRecord',this.value)">${escapeHtml(cr.customRecord || '')}</textarea>
+                </div>
+              `;
+              tr.appendChild(tdRecord);
+
+              const tdNote = document.createElement('td');
+              tdNote.className = groupColorCls;
+              tdNote.innerHTML = `<textarea rows="2" class="cell-input" placeholder="備註" oninput="onCriteriaInput('${flow.id}','${mgmt.id}','${cr.id}','note',this.value)">${escapeHtml(cr.note)}</textarea>`;
+              tr.appendChild(tdNote);
+
+              const tdOp = document.createElement('td');
+              tdOp.className = groupColorCls;
+              tdOp.style.textAlign = 'center';
+              tdOp.style.verticalAlign = 'middle';
+              tdOp.innerHTML = `<button class="btn-danger-ghost" onclick="deleteCriteria('${flow.id}','${mgmt.id}','${cr.id}')" title="刪除此列">✕</button>`;
+              tr.appendChild(tdOp);
+
+              tbody.appendChild(tr);
+            });
+          });
+        });
+      });
+    });
+  }
+
+  function onFlowNameInput(flowId, val) {
+    const f = appData.find(x => x.id === flowId);
+    if (!f) return;
+    f.flowName = val;
+    const inp = document.getElementById('inp_flow_' + flowId);
+    if (inp) inp.classList.toggle('input-error', !val.trim());
+    validateAllData();
+    renderStandardPreview();
+    renderChecklistPreview();
+    updateFlowBreakDropdown();
+    updateDiagram();
+    saveStateToLocalStorage();
+  }
+
+  function onMgmtNameInput(flowId, mgmtId, val) {
+    const f = appData.find(x => x.id === flowId);
+    if (!f) return;
+    const m = f.mgmtItems.find(x => x.id === mgmtId);
+    if (!m) return;
+    m.name = val;
+    const inp = document.getElementById('inp_mgmt_' + mgmtId);
+    if (inp) inp.classList.toggle('input-error', !val.trim());
+    validateAllData();
+    renderStandardPreview();
+    renderChecklistPreview();
+    saveStateToLocalStorage();
+  }
+
+  function onCriteriaInput(flowId, mgmtId, crId, field, val) {
+    const f = appData.find(x => x.id === flowId);
+    if (!f) return;
+    const m = f.mgmtItems.find(x => x.id === mgmtId);
+    if (!m) return;
+    const c = m.criteriaList.find(x => x.id === crId);
+    if (!c) return;
+    c[field] = val;
+
+    if (field === 'std') {
+      const el = document.getElementById('inp_std_' + crId);
+      if (el) el.classList.toggle('input-error', !val.trim());
+    } else if (field === 'freq') {
+      const el = document.getElementById('inp_freq_' + crId);
+      const errSpan = document.getElementById('err_freq_' + crId);
+      const isBad = (!val.trim()) || (m.isStopPoint && val.includes('不定期'));
+      if (el) el.classList.toggle('input-error', isBad);
+      if (errSpan) errSpan.style.display = (m.isStopPoint && val.includes('不定期')) ? 'inline-block' : 'none';
+    }
+    validateAllData();
+    renderStandardPreview();
+    renderChecklistPreview();
+    saveStateToLocalStorage();
+  }
+
+  function toggleFlowSafety(flowId, checked) {
+    const f = appData.find(x => x.id === flowId);
+    if (!f) return;
+    f.isSafetyPoint = checked;
+    refreshAllViews();
+  }
+
+  function toggleMgmtStopPoint(flowId, mgmtId, checked) {
+    const f = appData.find(x => x.id === flowId);
+    if (!f) return;
+    const m = f.mgmtItems.find(x => x.id === mgmtId);
+    if (!m) return;
+    m.isStopPoint = checked;
+    refreshAllViews();
+  }
+
+  function bindPhaseEmptyDropEvents(trEl, targetPhaseKey) {
+    trEl.addEventListener('dragover', (e) => {
+      if (!dragState.type || dragState.type !== 'flow') return;
+      e.preventDefault();
+      trEl.classList.add('drag-over-box');
+    });
+    trEl.addEventListener('dragleave', () => trEl.classList.remove('drag-over-box'));
+    trEl.addEventListener('drop', (e) => {
+      e.preventDefault();
+      trEl.classList.remove('drag-over-box');
+      if (!dragState.type || dragState.type !== 'flow') return;
+      const fromIdx = appData.findIndex(f => String(f.id) === dragState.flowId);
+      if (fromIdx === -1) return;
+      const moved = appData.splice(fromIdx, 1)[0];
+      moved.phase = targetPhaseKey;
+      moved.mgmtItems.forEach(m => m.criteriaList.forEach(c => { c.action = getDefaultActionByPhase(targetPhaseKey); }));
+      appData.push(moved);
+      refreshAllViews();
+    });
+  }
+
+  function bindPhaseHeaderDropEvents(tdPhaseEl, targetPhaseKey) {
+    tdPhaseEl.addEventListener('dragover', (e) => {
+      if (!dragState.type || dragState.type !== 'flow') return;
+      e.preventDefault();
+      const rect = tdPhaseEl.getBoundingClientRect();
+      const isBottom = (e.clientY - rect.top) > (rect.height / 2);
+      tdPhaseEl.classList.toggle('drag-over-top', !isBottom);
+      tdPhaseEl.classList.toggle('drag-over-bottom', isBottom);
+    });
+    tdPhaseEl.addEventListener('dragleave', () => tdPhaseEl.classList.remove('drag-over-top', 'drag-over-bottom'));
+    tdPhaseEl.addEventListener('drop', (e) => {
+      e.preventDefault();
+      const rect = tdPhaseEl.getBoundingClientRect();
+      const isBottom = (e.clientY - rect.top) > (rect.height / 2);
+      tdPhaseEl.classList.remove('drag-over-top', 'drag-over-bottom');
+      if (!dragState.type || dragState.type !== 'flow') return;
+
+      const fromIdx = appData.findIndex(f => String(f.id) === dragState.flowId);
+      if (fromIdx === -1) return;
+      const moved = appData.splice(fromIdx, 1)[0];
+      moved.phase = targetPhaseKey;
+      moved.mgmtItems.forEach(m => m.criteriaList.forEach(c => { c.action = getDefaultActionByPhase(targetPhaseKey); }));
+
+      if (!isBottom) {
+        const firstIdx = appData.findIndex(f => f.phase === targetPhaseKey);
+        if (firstIdx !== -1) appData.splice(firstIdx, 0, moved);
+        else appData.unshift(moved);
+      } else {
+        let lastIdx = -1;
+        appData.forEach((f, i) => { if (f.phase === targetPhaseKey) lastIdx = i; });
+        if (lastIdx !== -1) appData.splice(lastIdx + 1, 0, moved);
+        else appData.push(moved);
+      }
+      refreshAllViews();
+    });
+  }
+
+  function bindDragEvents(cellEl, type, flowId, mgmtId) {
+    const handle = cellEl.querySelector('.drag-handle');
+    if (handle) {
+      handle.addEventListener('mousedown', () => cellEl.setAttribute('draggable', 'true'));
+      handle.addEventListener('mouseup', () => cellEl.removeAttribute('draggable'));
+    }
+
+    cellEl.addEventListener('dragstart', (e) => {
+      if (cellEl.getAttribute('draggable') !== 'true') { e.preventDefault(); return; }
+      e.stopPropagation();
+      dragState = { type, flowId: String(flowId), mgmtId: mgmtId ? String(mgmtId) : null };
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', flowId);
+    });
+
+    cellEl.addEventListener('dragover', (e) => {
+      if (!dragState.type || dragState.type !== type) return;
+      if (type === 'mgmt' && String(flowId) !== dragState.flowId) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const rect = cellEl.getBoundingClientRect();
+      const isBottom = (e.clientY - rect.top) > (rect.height / 2);
+      cellEl.classList.toggle('drag-over-top', !isBottom);
+      cellEl.classList.toggle('drag-over-bottom', isBottom);
+    });
+
+    cellEl.addEventListener('dragleave', () => cellEl.classList.remove('drag-over-top', 'drag-over-bottom'));
+
+    cellEl.addEventListener('drop', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      cellEl.classList.remove('drag-over-top', 'drag-over-bottom');
+      if (!dragState.type || dragState.type !== type) return;
+
+      const rect = cellEl.getBoundingClientRect();
+      const isBottom = (e.clientY - rect.top) > (rect.height / 2);
+
+      if (type === 'flow') {
+        if (dragState.flowId === String(flowId)) return;
+        const fromIdx = appData.findIndex(f => String(f.id) === dragState.flowId);
+        const toIdx = appData.findIndex(f => String(f.id) === String(flowId));
+        if (fromIdx === -1 || toIdx === -1) return;
+        const targetPhase = appData[toIdx].phase;
+        const moved = appData.splice(fromIdx, 1)[0];
+        moved.phase = targetPhase;
+        moved.mgmtItems.forEach(m => m.criteriaList.forEach(c => { c.action = getDefaultActionByPhase(targetPhase); }));
+        const newToIdx = appData.findIndex(f => String(f.id) === String(flowId));
+        appData.splice(isBottom ? newToIdx + 1 : newToIdx, 0, moved);
+        refreshAllViews();
+      } else if (type === 'mgmt') {
+        if (String(flowId) !== dragState.flowId || dragState.mgmtId === String(mgmtId)) return;
+        const flowObj = appData.find(f => String(f.id) === String(flowId));
+        if (!flowObj) return;
+        const fromIdx = flowObj.mgmtItems.findIndex(m => String(m.id) === dragState.mgmtId);
+        const toIdx = flowObj.mgmtItems.findIndex(m => String(m.id) === String(mgmtId));
+        if (fromIdx === -1 || toIdx === -1) return;
+        const moved = flowObj.mgmtItems.splice(fromIdx, 1)[0];
+        const newToIdx = flowObj.mgmtItems.findIndex(m => String(m.id) === String(mgmtId));
+        flowObj.mgmtItems.splice(isBottom ? newToIdx + 1 : newToIdx, 0, moved);
+        refreshAllViews();
+      }
+    });
+
+    cellEl.addEventListener('dragend', () => {
+      cellEl.removeAttribute('draggable');
+      document.querySelectorAll('.drag-over-top, .drag-over-bottom, .drag-over-box').forEach(el => {
+        el.classList.remove('drag-over-top', 'drag-over-bottom', 'drag-over-box');
+      });
+      dragState = { type: null, flowId: null, mgmtId: null };
+    });
+  }
+
+  function addFlow(phaseKey) {
+    const uid = Date.now();
+    appData.push({
+      id: 'fl_' + uid,
+      phase: phaseKey,
+      flowName: '新施工工項',
+      isSafetyPoint: false,
+      mgmtItems: [
+        {
+          id: 'mg_' + uid,
+          name: '新管理項目',
+          isStopPoint: false,
+          criteriaList: [
+            { id: 'cr_' + uid, std: '依設計圖說及規範辦理', method: '目視', freq: '每次', action: getDefaultActionByPhase(phaseKey), customRecord: '', note: '' }
+          ]
+        }
+      ]
+    });
+    refreshAllViews();
+  }
+
+  function deleteFlow(flowId) {
+    if (appData.length <= 1) { alert('至少需保留一個施工工項！'); return; }
+    appData = appData.filter(f => String(f.id) !== String(flowId));
+    if (String(flowSettings.splitTaskId) === String(flowId)) flowSettings.splitTaskId = null;
+    refreshAllViews();
+  }
+
+  function addMgmtItem(flowId) {
+    const f = appData.find(x => String(x.id) === String(flowId));
+    if (!f) return;
+    const uid = Date.now();
+    f.mgmtItems.push({
+      id: 'mg_' + uid,
+      name: '新管理項目',
+      isStopPoint: false,
+      criteriaList: [
+        { id: 'cr_' + uid, std: '', method: '目視', freq: '每次', action: getDefaultActionByPhase(f.phase), customRecord: '', note: '' }
+      ]
+    });
+    refreshAllViews();
+  }
+
+  function deleteMgmtItem(flowId, mgmtId) {
+    const f = appData.find(x => String(x.id) === String(flowId));
+    if (!f) return;
+    if (f.mgmtItems.length <= 1) { alert('每個施工工項至少需保留一個管理項目(A)！'); return; }
+    f.mgmtItems = f.mgmtItems.filter(m => String(m.id) !== String(mgmtId));
+    refreshAllViews();
+  }
+
+  function addCriteria(flowId, mgmtId) {
+    const f = appData.find(x => String(x.id) === String(flowId));
+    if (!f) return;
+    const m = f.mgmtItems.find(x => String(x.id) === String(mgmtId));
+    if (!m) return;
+    const lastCr = m.criteriaList[m.criteriaList.length - 1];
+    m.criteriaList.push({
+      id: 'cr_' + Date.now(),
+      std: '',
+      method: lastCr ? lastCr.method : '目視',
+      freq: lastCr ? lastCr.freq : '每次',
+      action: lastCr ? lastCr.action : getDefaultActionByPhase(f.phase),
+      customRecord: lastCr ? lastCr.customRecord : '',
+      note: ''
+    });
+    refreshAllViews();
+  }
+
+  function deleteCriteria(flowId, mgmtId, crId) {
+    const f = appData.find(x => String(x.id) === String(flowId));
+    if (!f) return;
+    const m = f.mgmtItems.find(x => String(x.id) === String(mgmtId));
+    if (!m) return;
+    if (m.criteriaList.length <= 1) {
+      deleteMgmtItem(flowId, mgmtId);
+      return;
+    }
+    m.criteriaList = m.criteriaList.filter(c => String(c.id) !== String(crId));
+    refreshAllViews();
+  }
+
+  function refreshAllViews(shouldSave = true) {
+    renderSafetyFormsManager();
+    renderStandardEditor();
+    validateAllData();
+    renderStandardPreview();
+    renderChecklistPreview();
+    updateFlowBreakDropdown();
+    updateDiagram();
+    if (shouldSave) saveStateToLocalStorage();
+  }
+
+  // ==================== 展平資料計算 Rowspan ====================
+  function buildFlattenedRows() {
+    const phaseOrder = ['pre', 'mid', 'post'];
+    const flatRows = [];
+
+    phaseOrder.forEach(pKey => {
+      const flowsInPhase = appData.filter(f => f.phase === pKey);
+      flowsInPhase.forEach(flow => {
+        flow.mgmtItems.forEach(mgmt => {
+          mgmt.criteriaList.forEach(cr => {
+            flatRows.push({
+              phase: pKey,
+              phaseLabel: getPhaseLabel(pKey),
+              flowId: flow.id,
+              flowName: flow.flowName,
+              isSafetyPoint: flow.isSafetyPoint,
+              mgmtId: mgmt.id,
+              mgmtName: mgmt.name,
+              isStopPoint: mgmt.isStopPoint,
+              crId: cr.id,
+              std: cr.std,
+              method: cr.method,
+              freq: cr.freq,
+              action: cr.action,
+              record: composeRecordText(pKey, cr),
+              note: cr.note,
+              phaseSpan: 0, flowSpan: 0, mgmtSpan: 0, recordSpan: 0
+            });
+          });
+        });
+      });
+    });
+
+    for (let i = 0; i < flatRows.length; i++) {
+      if (i === 0 || flatRows[i].phase !== flatRows[i - 1].phase) {
+        let span = 1;
+        for (let j = i + 1; j < flatRows.length && flatRows[j].phase === flatRows[i].phase; j++) span++;
+        flatRows[i].phaseSpan = span;
+      }
+      if (i === 0 || flatRows[i].flowId !== flatRows[i - 1].flowId) {
+        let span = 1;
+        for (let j = i + 1; j < flatRows.length && flatRows[j].flowId === flatRows[i].flowId; j++) span++;
+        flatRows[i].flowSpan = span;
+      }
+      if (i === 0 || flatRows[i].mgmtId !== flatRows[i - 1].mgmtId) {
+        let span = 1;
+        for (let j = i + 1; j < flatRows.length && flatRows[j].mgmtId === flatRows[i].mgmtId; j++) span++;
+        flatRows[i].mgmtSpan = span;
+      }
+      const rec = (flatRows[i].record || '').trim();
+      if (!rec) {
+        flatRows[i].recordSpan = 1;
+      } else if (i === 0 || (flatRows[i - 1].record || '').trim() !== rec || flatRows[i - 1].phase !== flatRows[i].phase) {
+        let span = 1;
+        for (let j = i + 1; j < flatRows.length; j++) {
+          if ((flatRows[j].record || '').trim() === rec && flatRows[j].phase === flatRows[i].phase) span++;
+          else break;
+        }
+        flatRows[i].recordSpan = span;
+      }
+    }
+    return flatRows;
+  }
+
   function applyWordOuterThickBorders(htmlString) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlString, 'text/html');
@@ -602,1086 +1655,6 @@
     return doc.body.innerHTML;
   }
 
-  // ==================== 自動暫存 (LocalStorage) ====================
-  function buildProjectStateObject() {
-    return {
-      version: '9.0',
-      savedAt: new Date().toISOString(),
-      globalConfig: {
-        stdTitle: document.getElementById('stdTitleInput').value,
-        chkFormTitle: document.getElementById('chkFormTitleInput').value,
-        flowTitle: document.getElementById('flowTitleInput').value
-      },
-      checklistHeader: {
-        planHeader: document.getElementById('chkPlanHeader').value,
-        docCode: document.getElementById('chkDocCode').value,
-        projectName: document.getElementById('chkProjectName').value,
-        subProject: document.getElementById('chkSubProject').value,
-        proofDocText: document.getElementById('chkProofDocText').value,
-        showProofRow: document.getElementById('chkShowProofRow').checked,
-        showSafetyBottom: document.getElementById('chkShowSafetyBottom').checked,
-        showDefectBottom: document.getElementById('chkShowDefectBottom').checked
-      },
-      flowSettings: {
-        enablePhases,
-        enableLegend,
-        splitTaskId,
-        nodeWidth,
-        nodeHeight,
-        fontSizePt,
-        verticalGap
-      },
-      safetyForms,
-      appData
-    };
-  }
-
-  function applyProjectStateObject(state) {
-    if (!state || !Array.isArray(state.appData)) return false;
-
-    if (state.globalConfig) {
-      document.getElementById('stdTitleInput').value = state.globalConfig.stdTitle ?? '';
-      document.getElementById('chkFormTitleInput').value = state.globalConfig.chkFormTitle ?? '';
-      document.getElementById('flowTitleInput').value = state.globalConfig.flowTitle ?? '';
-    }
-    if (state.checklistHeader) {
-      document.getElementById('chkPlanHeader').value = state.checklistHeader.planHeader ?? '';
-      document.getElementById('chkDocCode').value = state.checklistHeader.docCode ?? '';
-      document.getElementById('chkProjectName').value = state.checklistHeader.projectName ?? '';
-      document.getElementById('chkSubProject').value = state.checklistHeader.subProject ?? '';
-      document.getElementById('chkProofDocText').value = state.checklistHeader.proofDocText ?? '';
-      document.getElementById('chkShowProofRow').checked = !!state.checklistHeader.showProofRow;
-      document.getElementById('chkShowSafetyBottom').checked = state.checklistHeader.showSafetyBottom !== false;
-      document.getElementById('chkShowDefectBottom').checked = state.checklistHeader.showDefectBottom !== false;
-    }
-    if (state.flowSettings) {
-      enablePhases = state.flowSettings.enablePhases !== false;
-      enableLegend = state.flowSettings.enableLegend !== false;
-      splitTaskId = state.flowSettings.splitTaskId || null;
-      nodeWidth = Number(state.flowSettings.nodeWidth) || 136;
-      nodeHeight = Number(state.flowSettings.nodeHeight) || 36;
-      fontSizePt = Number(state.flowSettings.fontSizePt) || 10;
-      verticalGap = Number(state.flowSettings.verticalGap) || 24;
-
-      document.getElementById('enablePhasesCheckbox').checked = enablePhases;
-      document.getElementById('enableLegendCheckbox').checked = enableLegend;
-      document.getElementById('valWidth').textContent = nodeWidth + 'pt';
-      document.getElementById('valHeight').textContent = nodeHeight + 'pt';
-      document.getElementById('valFont').textContent = fontSizePt + 'pt';
-      document.getElementById('valGap').textContent = verticalGap + 'pt';
-    }
-
-    safetyForms = Array.isArray(state.safetyForms) ? state.safetyForms : [];
-    appData = state.appData;
-    refreshAllViews(false);
-    return true;
-  }
-
-  function saveStateToLocalStorage() {
-    try {
-      const state = buildProjectStateObject();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      const now = new Date();
-      const timeStr = now.toTimeString().split(' ')[0];
-      const ind = document.getElementById('autosaveStatus');
-      if (ind) ind.textContent = `💾 已自動暫存 (${timeStr})`;
-    } catch (e) {
-      console.warn('LocalStorage 儲存失敗:', e);
-    }
-  }
-
-  function loadStateFromLocalStorage() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return false;
-      const state = JSON.parse(raw);
-      return applyProjectStateObject(state);
-    } catch (e) {
-      console.warn('LocalStorage 讀取失敗:', e);
-      return false;
-    }
-  }
-
-  function confirmResetSample() {
-    if (confirm('確定要重置為預設範例嗎？')) {
-      loadSampleData(false);
-    }
-  }
-
-  // ==================== 預設範例載入 ====================
-  function loadSampleData(silent = false) {
-    safetyForms = [
-      { id: 'sf1', name: '一般作業停留點安全檢核表' },
-      { id: 'sf2', name: '局限空間作業安全抽查紀錄表' },
-      { id: 'sf3', name: '工地環境保護檢查記錄表' },
-      { id: 'sf4', name: '立即發生危險作業抽查表' }
-    ];
-
-    document.getElementById('stdTitleInput').value = '表 02448 隧道防水膜施工抽查標準';
-    document.getElementById('chkFormTitleInput').value = '表 02448 隧道防水層施工抽查紀錄表';
-    document.getElementById('flowTitleInput').value = '02448 隧道防水層施工';
-    document.getElementById('chkPlanHeader').value = '台灣世曦工程顧問股份有限公司';
-    document.getElementById('chkDocCode').value = '';
-    document.getElementById('chkProjectName').value = '';
-    document.getElementById('chkSubProject').value = '';
-    document.getElementById('chkProofDocText').value = '施工圖';
-    document.getElementById('chkShowProofRow').checked = false;
-    document.getElementById('chkShowSafetyBottom').checked = true;
-    document.getElementById('chkShowDefectBottom').checked = true;
-
-    appData = [
-      {
-        id: 'fl_1', phase: 'pre', flowName: '施工前準備工作', isSafetyPoint: true,
-        safetyFormIds: ['sf1'],
-        mgmtItems: [
-          {
-            id: 'mg_1', name: '證明文件', isStopPoint: false,
-            criteriaList: [
-              { id: 'cr_1', std: '施工計畫核定文號', method: '文件查閱', freq: '每次', action: '不得施工', useMainForm: false, customRecord: '核備文件', note: '' },
-              { id: 'cr_2', std: '施工圖核定文號', method: '文件查閱', freq: '每次', action: '不得施工', useMainForm: false, customRecord: '核備文件', note: '' }
-            ]
-          },
-          {
-            id: 'mg_2', name: '材料進場', isStopPoint: true,
-            criteriaList: [
-              { id: 'cr_3', std: '合格材料(非織物、防水膜)抽驗紀錄', method: '文件查閱', freq: '每批', action: '不得施工', useMainForm: false, customRecord: '材料/設備品質抽驗紀錄表', note: '' }
-            ]
-          }
-        ]
-      },
-      {
-        id: 'fl_2', phase: 'mid', flowName: '防水膜作業', isSafetyPoint: true,
-        safetyFormIds: ['sf1'],
-        mgmtItems: [
-          {
-            id: 'mg_3', name: '尖銳物修整平順', isStopPoint: false,
-            criteriaList: [
-              { id: 'cr_4', std: '表面無鬆動物質、雜物或外露鐵件', method: '目視', freq: '不定期', action: '改正', useMainForm: true, customRecord: '', note: '' }
-            ]
-          },
-          {
-            id: 'mg_4', name: '非織布搭接', isStopPoint: false,
-            criteriaList: [
-              { id: 'cr_5', std: '搭接長度≧10cm', method: '捲尺', freq: '不定期', action: '改正', useMainForm: true, customRecord: '', note: '' },
-              { id: 'cr_6', std: '縱向接縫≦2 道/環', method: '目視', freq: '不定期', action: '改正', useMainForm: true, customRecord: '', note: '' }
-            ]
-          },
-          {
-            id: 'mg_5', name: '固定塊(熱熔墊片)間距、數量', isStopPoint: false,
-            criteriaList: [
-              { id: 'cr_7', std: '間距≦60cm，數量≧4 塊/m²', method: '捲尺', freq: '不定期', action: '改正', useMainForm: true, customRecord: '', note: '' }
-            ]
-          },
-          {
-            id: 'mg_6', name: '防水膜搭接', isStopPoint: true,
-            criteriaList: [
-              { id: 'cr_8', std: '以雙道熱溶接方式連接', method: '目視', freq: '每次', action: '改正', useMainForm: true, customRecord: '', note: '' },
-              { id: 'cr_9', std: '搭接長度≧8cm', method: '捲尺', freq: '每次', action: '改正', useMainForm: true, customRecord: '', note: '' },
-              { id: 'cr_10', std: '破裂修補處，其四周搭接長度≧15cm', method: '捲尺', freq: '每次', action: '改正', useMainForm: true, customRecord: '', note: '' }
-            ]
-          },
-          {
-            id: 'mg_7', name: '接縫抗拉強度取樣', isStopPoint: true,
-            criteriaList: [
-              { id: 'cr_11', std: '每 1,000m 取樣一組', method: '目視', freq: '每次', action: '改正', useMainForm: true, customRecord: '', note: '' }
-            ]
-          },
-          {
-            id: 'mg_8', name: '接縫密封檢驗', isStopPoint: true,
-            criteriaList: [
-              { id: 'cr_12', std: '□氣壓檢驗\n打入 1.0~2.0kgf/cm² 空氣壓力，維持 5 分鐘，壓力下降≦20%\n□真空罩檢驗\n以 0.2~0.5kgf/cm² 壓力抽出空氣，儀表指針不動，表示有破損', method: '空壓機/真空幫浦', freq: '每處', action: '改正', useMainForm: false, customRecord: '材料/設備品質抽驗紀錄表', note: '' }
-            ]
-          },
-          {
-            id: 'mg_9', name: '破損檢驗', isStopPoint: true,
-            criteriaList: [
-              { id: 'cr_13', std: '以 0.2~0.5kgf/cm² 壓力抽出空氣，儀表指針不動，表示有破損', method: '真空幫浦', freq: '每處', action: '改正', useMainForm: false, customRecord: '材料/設備品質抽驗紀錄表', note: '' }
-            ]
-          }
-        ]
-      },
-      {
-        id: 'fl_3', phase: 'post', flowName: '清理及檢視', isSafetyPoint: true,
-        safetyFormIds: ['sf1'],
-        mgmtItems: [
-          {
-            id: 'mg_10', name: '場地整潔', isStopPoint: true,
-            criteriaList: [
-              { id: 'cr_14', std: '保持場地整潔，無雜物', method: '目視', freq: '每次', action: '改正', useMainForm: true, customRecord: '', note: '' }
-            ]
-          }
-        ]
-      }
-    ];
-
-    splitTaskId = null;
-    refreshAllViews(true);
-    if (!silent) showToast('已重置為預設範例資料！');
-  }
-
-  function switchTab(tabIdx) {
-    [1, 2, 3].forEach(i => {
-      document.getElementById('tabBtn' + i).classList.toggle('active', i === tabIdx);
-      document.getElementById('tabPane' + i).classList.toggle('active', i === tabIdx);
-    });
-    renderStandardPreview();
-    renderChecklistPreview();
-    updateDiagram();
-  }
-
-  function syncGlobalConfig() {
-    const stdVal = document.getElementById('stdTitleInput').value.trim() || '（請填寫抽查標準表標題）';
-    document.getElementById('editorTableHeading').innerHTML = colorizeSymbolsHtml(stdVal);
-    validateAllData();
-    renderStandardPreview();
-    renderChecklistPreview();
-    updateDiagram();
-    saveStateToLocalStorage();
-  }
-
-  function onChecklistHeaderInput() {
-    renderChecklistPreview();
-    saveStateToLocalStorage();
-  }
-
-  function colorizeSymbolsHtml(str) {
-    if (!str) return '';
-    let escaped = escapeHtml(str);
-    escaped = escaped.replace(/\r?\n/g, '<br/>');
-    escaped = escaped.replace(/★/g, '<span style="color:#0033CC;font-weight:bold;">★</span>');
-    escaped = escaped.replace(/※/g, '<span style="color:#CC0000;font-weight:bold;">※</span>');
-    return escaped;
-  }
-
-  function insertSymbol(e, sym) {
-    e.preventDefault();
-    if (!lastFocusedInput) {
-      showToast('請先點選表格內的文字框，再點擊符號按鈕！', true);
-      return;
-    }
-    const start = lastFocusedInput.selectionStart || 0;
-    const end = lastFocusedInput.selectionEnd || 0;
-    const val = lastFocusedInput.value || '';
-    lastFocusedInput.value = val.substring(0, start) + sym + val.substring(end);
-    lastFocusedInput.selectionStart = lastFocusedInput.selectionEnd = start + sym.length;
-    lastFocusedInput.focus();
-    lastFocusedInput.dispatchEvent(new Event('input', { bubbles: true }));
-  }
-
-  // ==================== 右下角安衛表單索引庫 ====================
-  function isSafetyFormUsed(sfId) {
-    return appData.some(f => f.isSafetyPoint && Array.isArray(f.safetyFormIds) && f.safetyFormIds.includes(sfId));
-  }
-
-  function hasNumberCode(str) {
-    return /\d/.test(String(str || ''));
-  }
-
-  function renderSafetyFormsManager() {
-    const container = document.getElementById('safetyFormsListContainer');
-    container.innerHTML = '';
-    if (safetyForms.length === 0) {
-      container.innerHTML = `<div style="color:#94a3b8; font-size:0.82rem; padding:4px;">目前無安衛表單，請由下方新增</div>`;
-      return;
-    }
-    safetyForms.forEach(sf => {
-      const used = isSafetyFormUsed(sf.id);
-      const missingCode = used && !hasNumberCode(sf.name);
-      const div = document.createElement('div');
-      div.className = 'safety-item';
-      div.innerHTML = `
-        <div class="safety-item-row">
-          <b style="color:#CC0000; flex-shrink:0;">※</b>
-          <input type="text" id="sf_inp_${sf.id}" class="${missingCode ? 'input-error' : ''}" value="${escapeHtml(sf.name)}" oninput="updateSafetyFormName('${sf.id}', this.value)" title="直接修改安衛表單編號與名稱">
-          <button class="btn-danger-ghost" onclick="removeSafetyForm('${sf.id}')" title="刪除此安衛表">✕</button>
-        </div>
-        <span id="sf_err_${sf.id}" class="err-msg" style="display:${missingCode ? 'inline-block' : 'none'};">⚠ 此表已被勾選引用，請補上表單編號(數字)</span>
-      `;
-      container.appendChild(div);
-    });
-  }
-
-  function updateSafetyFormName(sfId, newName) {
-    const sf = safetyForms.find(s => s.id === sfId);
-    if (!sf) return;
-    sf.name = newName;
-    document.querySelectorAll(`.sf-label-${sfId}`).forEach(el => {
-      el.textContent = newName;
-    });
-    const used = isSafetyFormUsed(sfId);
-    const missingCode = used && !hasNumberCode(newName);
-    const inp = document.getElementById('sf_inp_' + sfId);
-    const err = document.getElementById('sf_err_' + sfId);
-    if (inp) inp.classList.toggle('input-error', missingCode);
-    if (err) err.style.display = missingCode ? 'inline-block' : 'none';
-
-    validateAllData();
-    renderStandardPreview();
-    renderChecklistPreview();
-    updateDiagram();
-    saveStateToLocalStorage();
-  }
-
-  function addSafetyForm() {
-    const inp = document.getElementById('newSafetyFormInput');
-    const val = inp.value.trim();
-    if (!val) return;
-    safetyForms.push({ id: 'sf_' + Date.now(), name: val });
-    inp.value = '';
-    refreshAllViews();
-    showToast(`已新增安衛表單：${val}`);
-  }
-
-  function removeSafetyForm(id) {
-    safetyForms = safetyForms.filter(s => s.id !== id);
-    appData.forEach(f => {
-      f.safetyFormIds = (f.safetyFormIds || []).filter(sid => sid !== id);
-    });
-    refreshAllViews();
-  }
-
-  function getSafetyNamesByIds(ids) {
-    if (!Array.isArray(ids)) return [];
-    return ids.map(id => {
-      const found = safetyForms.find(s => s.id === id);
-      return found ? found.name.trim() : '';
-    }).filter(Boolean);
-  }
-
-  function composeRecordText(flow, cr) {
-    const mainFormName = document.getElementById('chkFormTitleInput').value.trim() || '施工抽查紀錄表';
-    const parts = [];
-    if (cr.useMainForm && mainFormName) {
-      parts.push(mainFormName);
-    }
-    if (cr.customRecord && cr.customRecord.trim()) {
-      parts.push(cr.customRecord.trim());
-    }
-    if (flow.isSafetyPoint) {
-      const sfNames = getSafetyNamesByIds(flow.safetyFormIds);
-      sfNames.forEach(n => {
-        if (!parts.includes(n)) parts.push(n);
-      });
-    }
-    return parts.join('\n');
-  }
-
-  // ==================== 防呆檢核引擎 ====================
-  function validateAllData() {
-    const errors = [];
-
-    const stdTitleEl = document.getElementById('stdTitleInput');
-    const chkTitleEl = document.getElementById('chkFormTitleInput');
-    const flowTitleEl = document.getElementById('flowTitleInput');
-
-    const stdVal = stdTitleEl.value.trim();
-    const chkVal = chkTitleEl.value.trim();
-    const flowVal = flowTitleEl.value.trim();
-
-    const stdInvalid = !stdVal || !hasNumberCode(stdVal);
-    const chkInvalid = !chkVal || !hasNumberCode(chkVal);
-    const flowInvalid = !flowVal || !hasNumberCode(flowVal);
-
-    stdTitleEl.classList.toggle('input-error', stdInvalid);
-    chkTitleEl.classList.toggle('input-error', chkInvalid);
-    flowTitleEl.classList.toggle('input-error', flowInvalid);
-
-    document.getElementById('err_stdTitle').style.display = stdInvalid ? 'inline-block' : 'none';
-    document.getElementById('err_chkTitle').style.display = chkInvalid ? 'inline-block' : 'none';
-    document.getElementById('err_flowTitle').style.display = flowInvalid ? 'inline-block' : 'none';
-
-    if (stdInvalid) errors.push('右上角「1. 抽查標準表標題」尚未填寫或缺少表單編號！');
-    if (chkInvalid) errors.push('右上角「2. 施工抽查表編號與名稱」尚未填寫或缺少表單編號！');
-    if (flowInvalid) errors.push('右上角「3. 施工流程圖表頭編號與名稱」尚未填寫或缺少編號！');
-
-    safetyForms.forEach(sf => {
-      if (isSafetyFormUsed(sf.id) && !hasNumberCode(sf.name)) {
-        errors.push(`右下角安衛表單「${sf.name}」已被工項勾選引用，請補上該計畫之表單編號！`);
-      }
-    });
-
-    appData.forEach(flow => {
-      if (!flow.flowName.trim()) {
-        errors.push(`【${getPhaseLabel(flow.phase)}】有施工工項名稱空白`);
-      }
-      const sfNames = getSafetyNamesByIds(flow.safetyFormIds);
-      if (flow.isSafetyPoint && sfNames.length === 0) {
-        errors.push(`施工工項「${flow.flowName || '未命名'}」勾選了 ※ 安衛查驗點，請至少勾選 1 張對應的安衛表單！`);
-      }
-      flow.mgmtItems.forEach(mgmt => {
-        if (!mgmt.name.trim()) {
-          errors.push(`「${flow.flowName}」底下有管理項目(A)名稱空白`);
-        }
-        mgmt.criteriaList.forEach(cr => {
-          if (!cr.std.trim()) {
-            errors.push(`管理項目「${mgmt.name || '未命名'}」的抽查標準(B)不可空白`);
-          }
-          if (!cr.freq.trim()) {
-            errors.push(`管理項目「${mgmt.name || '未命名'}」的抽查頻率不可空白`);
-          }
-          if (mgmt.isStopPoint && cr.freq.includes('不定期')) {
-            errors.push(`【停留點防呆】管理項目「★ ${mgmt.name}」為檢驗停留點，抽查頻率不可填「${cr.freq}」！`);
-          }
-        });
-      });
-    });
-
-    const banner = document.getElementById('validationBanner');
-    const badge = document.getElementById('navBadge');
-    if (errors.length === 0) {
-      banner.className = 'validation-banner val-ok';
-      banner.innerHTML = `✅ 防呆檢核通過：所有標題編號、安衛表編號與檢驗停留點頻率皆符合規範！`;
-      badge.className = 'tab-badge badge-ok';
-      badge.textContent = '✓ 檢核通過';
-    } else {
-      banner.className = 'validation-banner val-err';
-      banner.innerHTML = `
-        <div>⚠️ 發現 ${errors.length} 項防呆提醒（請修正黃色警示框處）：</div>
-        <ul style="margin:4px 0 0 0; padding-left:20px; font-size:0.82rem;">
-          ${errors.slice(0, 5).map(e => `<li>${escapeHtml(e)}</li>`).join('')}
-          ${errors.length > 5 ? `<li>...還有 ${errors.length - 5} 項提醒</li>` : ''}
-        </ul>
-      `;
-      badge.className = 'tab-badge badge-err';
-      badge.textContent = `⚠ ${errors.length} 提醒`;
-    }
-    return errors;
-  }
-
-  function getPhaseLabel(ph) {
-    return ph === 'pre' ? '施工前' : (ph === 'post' ? '施工後' : '施工中');
-  }
-
-  // ==================== 頁籤 1：直覺式表格編輯器 (套用方案 B：依管理項目整塊深淺交錯) ====================
-  function renderStandardEditor() {
-    renderPreservingScroll(() => {
-      const stdVal = document.getElementById('stdTitleInput').value.trim() || '（請填寫抽查標準表標題）';
-      document.getElementById('editorTableHeading').innerHTML = colorizeSymbolsHtml(stdVal);
-      const tbody = document.getElementById('wysiwygTbody');
-      tbody.innerHTML = '';
-
-      const phases = [
-        { key: 'pre', label: '施工前', cellCls: 'phase-cell-pre', rowCls: 'row-phase-pre' },
-        { key: 'mid', label: '施工中', cellCls: 'phase-cell-mid', rowCls: 'row-phase-mid' },
-        { key: 'post', label: '施工後', cellCls: 'phase-cell-post', rowCls: 'row-phase-post' }
-      ];
-
-      phases.forEach(p => {
-        const flowsInPhase = appData.filter(f => f.phase === p.key);
-
-        if (flowsInPhase.length === 0) {
-          const tr = document.createElement('tr');
-          tr.className = p.rowCls;
-          tr.innerHTML = `
-            <td class="${p.cellCls}">
-              <div style="font-size:1rem; line-height:1.35; margin-bottom:6px;">${p.label.split('').join('<br>')}</div>
-              <button class="btn btn-primary btn-xs" onclick="addFlow('${p.key}')">＋工項</button>
-            </td>
-            <td colspan="10" style="text-align:center; color:#475569; padding:18px; font-weight:700; vertical-align:middle;">
-              📥 目前【${p.label}】尚無工項，可點左側「＋工項」新增，或直接將其他工項拖曳至此處放入
-            </td>
-          `;
-          bindPhaseEmptyDropEvents(tr, p.key);
-          tbody.appendChild(tr);
-          return;
-        }
-
-        let phaseTotalRows = 0;
-        flowsInPhase.forEach(f => f.mgmtItems.forEach(m => { phaseTotalRows += m.criteriaList.length; }));
-
-        let phaseCellRendered = false;
-        // 方案 B 計數器：依同階段內的「管理項目(A)」組別奇偶交錯
-        let phaseMgmtGroupCounter = 0;
-
-        flowsInPhase.forEach((flow) => {
-          let flowTotalRows = 0;
-          flow.mgmtItems.forEach(m => { flowTotalRows += m.criteriaList.length; });
-          let flowCellRendered = false;
-
-          const flowSafetyNames = getSafetyNamesByIds(flow.safetyFormIds);
-
-          flow.mgmtItems.forEach((mgmt) => {
-            phaseMgmtGroupCounter++;
-            const isOddGroup = (phaseMgmtGroupCounter % 2 === 1);
-            const groupColorCls = `b-${p.key}-group-${isOddGroup ? 'odd' : 'even'}`;
-
-            const mgmtTotalRows = mgmt.criteriaList.length;
-            let mgmtCellRendered = false;
-
-            mgmt.criteriaList.forEach((cr) => {
-              const tr = document.createElement('tr');
-              tr.className = p.rowCls;
-
-              // 1. 階段欄
-              if (!phaseCellRendered) {
-                const tdPhase = document.createElement('td');
-                tdPhase.className = p.cellCls;
-                tdPhase.rowSpan = phaseTotalRows;
-                tdPhase.innerHTML = `
-                  <div style="font-size:1.02rem; line-height:1.35; margin-bottom:10px;">${p.label.split('').join('<br>')}</div>
-                  <button class="btn btn-primary btn-xs" onclick="addFlow('${p.key}')" title="在${p.label}新增施工工項">＋工項</button>
-                `;
-                bindPhaseHeaderDropEvents(tdPhase, p.key);
-                tr.appendChild(tdPhase);
-                phaseCellRendered = true;
-              }
-
-              // 2. 施工工項欄
-              if (!flowCellRendered) {
-                const tdFlow = document.createElement('td');
-                tdFlow.className = 'flow-cell';
-                tdFlow.rowSpan = flowTotalRows;
-                tdFlow.dataset.flowId = flow.id;
-
-                const selectedIds = new Set(flow.safetyFormIds || []);
-                const safetyCheckboxesHtml = safetyForms.map(sf => `
-                  <label class="safety-multi-item">
-                    <input type="checkbox" ${selectedIds.has(sf.id) ? 'checked' : ''} onchange="toggleFlowSafetyFormItem('${flow.id}', '${sf.id}', this.checked)">
-                    <span class="sf-label-${sf.id}">${escapeHtml(sf.name)}</span>
-                  </label>
-                `).join('');
-
-                const noSafetySelectedErr = flow.isSafetyPoint && selectedIds.size === 0;
-
-                tdFlow.innerHTML = `
-                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
-                    <span class="drag-handle" title="按住上下拖曳此施工工項順序">☰ 拖曳工項</span>
-                    <button class="btn-danger-ghost" onclick="deleteFlow('${flow.id}')" title="刪除此施工工項">✕</button>
-                  </div>
-                  <div style="display:flex; align-items:flex-start; gap:3px; margin-bottom:6px;">
-                    ${flow.isSafetyPoint ? '<span style="color:#CC0000;font-weight:bold;font-size:1rem;margin-top:4px;">※</span>' : ''}
-                    <textarea id="inp_flow_${flow.id}" rows="2" class="cell-input ${!flow.flowName.trim() ? 'input-error' : ''}" style="font-weight:700;" placeholder="施工工項名稱" oninput="onFlowNameInput('${flow.id}', this.value)">${escapeHtml(flow.flowName)}</textarea>
-                  </div>
-                  <div style="display:flex; align-items:center; justify-content:space-between; gap:4px; flex-wrap:wrap;">
-                    <label style="cursor:pointer; font-size:0.78rem; font-weight:700; color:#b91c1c; display:inline-flex; align-items:center; gap:4px; background:rgba(255,255,255,0.9); padding:2px 6px; border-radius:4px; border:1px solid #fca5a5;">
-                      <input type="checkbox" ${flow.isSafetyPoint ? 'checked' : ''} onchange="toggleFlowSafety('${flow.id}', this.checked)">
-                      <span><b style="color:#CC0000;">※</b> 安衛點</span>
-                    </label>
-                    <button class="btn btn-outline btn-xs" onclick="addMgmtItem('${flow.id}')" title="在此工項新增管理項目(A)">＋管理項目</button>
-                  </div>
-                  ${flow.isSafetyPoint ? `
-                    <div class="safety-multi-box ${noSafetySelectedErr ? 'input-error' : ''}">
-                      <div style="font-weight:700; color:#991b1b; margin-bottom:3px;">勾選安衛表 (自動印於管理紀錄)：</div>
-                      ${safetyCheckboxesHtml || '<div style="color:#dc2626;">請先於右側綠框新增安衛表</div>'}
-                      ${noSafetySelectedErr ? '<span class="err-msg">⚠ 請至少勾選一張安衛表</span>' : ''}
-                    </div>
-                  ` : ''}
-                `;
-
-                bindDragEvents(tdFlow, 'flow', flow.id, null);
-                tr.appendChild(tdFlow);
-                flowCellRendered = true;
-              }
-
-              // 3. 管理項目(A) (套用方案 B 群組底色 groupColorCls)
-              if (!mgmtCellRendered) {
-                const tdMgmt = document.createElement('td');
-                tdMgmt.className = groupColorCls;
-                tdMgmt.rowSpan = mgmtTotalRows;
-                tdMgmt.dataset.flowId = flow.id;
-                tdMgmt.dataset.mgmtId = mgmt.id;
-
-                tdMgmt.innerHTML = `
-                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
-                    <span class="drag-handle" title="按住上下拖曳此管理項目順序">☰ 拖曳</span>
-                    <div style="display:flex; gap:4px;">
-                      <button class="btn btn-outline btn-xs" onclick="addCriteria('${flow.id}','${mgmt.id}')" title="新增一列抽查標準(B)">＋標準列</button>
-                      <button class="btn-danger-ghost" onclick="deleteMgmtItem('${flow.id}','${mgmt.id}')" title="刪除此管理項目">✕</button>
-                    </div>
-                  </div>
-                  <div style="display:flex; align-items:flex-start; gap:3px; margin-bottom:6px;">
-                    ${mgmt.isStopPoint ? '<span style="color:#0033CC;font-weight:bold;font-size:1rem;margin-top:4px;">★</span>' : ''}
-                    <textarea id="inp_mgmt_${mgmt.id}" rows="2" class="cell-input ${!mgmt.name.trim() ? 'input-error' : ''}" style="font-weight:700;" placeholder="管理項目(A)" oninput="onMgmtNameInput('${flow.id}','${mgmt.id}', this.value)">${escapeHtml(mgmt.name)}</textarea>
-                  </div>
-                  <label style="cursor:pointer; font-size:0.78rem; font-weight:700; color:#1e40af; display:inline-flex; align-items:center; gap:4px; background:rgba(255,255,255,0.88); padding:2px 7px; border-radius:4px; border:1px solid #93c5fd;">
-                    <input type="checkbox" ${mgmt.isStopPoint ? 'checked' : ''} onchange="toggleMgmtStopPoint('${flow.id}','${mgmt.id}', this.checked)">
-                    <span><b style="color:#0033CC;">★</b> 檢驗停留點</span>
-                  </label>
-                `;
-
-                bindDragEvents(tdMgmt, 'mgmt', flow.id, mgmt.id);
-                tr.appendChild(tdMgmt);
-                mgmtCellRendered = true;
-              }
-
-              // 4 ~ 11 欄：全部套用同一個管理項目的 groupColorCls (方案 B：同組管理項目整塊同色)
-              const isFreqInvalid = (!cr.freq.trim()) || (mgmt.isStopPoint && cr.freq.includes('不定期'));
-              const isStdInvalid = !cr.std.trim();
-
-              // 4. 抽查標準(B)
-              const tdStd = document.createElement('td');
-              tdStd.className = groupColorCls;
-              tdStd.innerHTML = `<textarea id="inp_std_${cr.id}" rows="${cr.std.includes('\n') ? 4 : 2}" class="cell-input ${isStdInvalid ? 'input-error' : ''}" placeholder="輸入抽查標準(B)" oninput="onCriteriaInput('${flow.id}','${mgmt.id}','${cr.id}','std',this.value)">${escapeHtml(cr.std)}</textarea>`;
-              tr.appendChild(tdStd);
-
-              // 5. 抽查時機
-              const tdTiming = document.createElement('td');
-              tdTiming.className = groupColorCls;
-              tdTiming.style.textAlign = 'center';
-              tdTiming.style.verticalAlign = 'middle';
-              tdTiming.style.fontWeight = '700';
-              tdTiming.style.color = '#1e293b';
-              tdTiming.textContent = p.label;
-              tr.appendChild(tdTiming);
-
-              // 6. 抽查方法
-              const tdMethod = document.createElement('td');
-              tdMethod.className = groupColorCls;
-              tdMethod.innerHTML = `<textarea rows="2" class="cell-input" style="text-align:center;" placeholder="如：目視" oninput="onCriteriaInput('${flow.id}','${mgmt.id}','${cr.id}','method',this.value)">${escapeHtml(cr.method)}</textarea>`;
-              tr.appendChild(tdMethod);
-
-              // 7. 抽查頻率
-              const tdFreq = document.createElement('td');
-              tdFreq.className = groupColorCls;
-              tdFreq.innerHTML = `
-                <textarea id="inp_freq_${cr.id}" rows="2" class="cell-input ${isFreqInvalid ? 'input-error' : ''}" style="text-align:center;" placeholder="如：每次" oninput="onCriteriaInput('${flow.id}','${mgmt.id}','${cr.id}','freq',this.value)">${escapeHtml(cr.freq)}</textarea>
-                <span id="err_freq_${cr.id}" class="err-msg" style="display:${(mgmt.isStopPoint && cr.freq.includes('不定期')) ? 'inline-block' : 'none'};">⚠ 停留點禁填不定期</span>
-              `;
-              tr.appendChild(tdFreq);
-
-              // 8. 不符合之處置方法
-              const tdAction = document.createElement('td');
-              tdAction.className = groupColorCls;
-              tdAction.innerHTML = `<textarea rows="2" class="cell-input" style="text-align:center;" placeholder="如：改正" oninput="onCriteriaInput('${flow.id}','${mgmt.id}','${cr.id}','action',this.value)">${escapeHtml(cr.action)}</textarea>`;
-              tr.appendChild(tdAction);
-
-              // 9. 極簡化「管理紀錄」編輯欄
-              const tdRecord = document.createElement('td');
-              tdRecord.className = groupColorCls;
-              const safetyBadgeHtml = (flow.isSafetyPoint && flowSafetyNames.length > 0)
-                ? `<span class="rec-badge-safety" title="已自動連動並將於預覽/Word印出：\n${escapeHtml(flowSafetyNames.join('\n'))}">※ 已連動安衛表</span>`
-                : '';
-
-              tdRecord.innerHTML = `
-                <div class="rec-compact-box">
-                  <div class="rec-compact-top">
-                    <label class="rec-chk-simple" title="勾選後自動帶入右上角設定之施工抽查紀錄表">
-                      <input type="checkbox" ${cr.useMainForm ? 'checked' : ''} onchange="toggleCriteriaMainForm('${flow.id}','${mgmt.id}','${cr.id}', this.checked)">
-                      <span>本施工抽查表</span>
-                    </label>
-                    ${safetyBadgeHtml}
-                  </div>
-                  <textarea rows="1" class="cell-input" style="min-height:28px; padding:3px 6px !important;" placeholder="其他表單 (如：核備文件)" oninput="onCriteriaInput('${flow.id}','${mgmt.id}','${cr.id}','customRecord',this.value)">${escapeHtml(cr.customRecord || '')}</textarea>
-                </div>
-              `;
-              tr.appendChild(tdRecord);
-
-              // 10. 備註
-              const tdNote = document.createElement('td');
-              tdNote.className = groupColorCls;
-              tdNote.innerHTML = `<textarea rows="2" class="cell-input" placeholder="備註" oninput="onCriteriaInput('${flow.id}','${mgmt.id}','${cr.id}','note',this.value)">${escapeHtml(cr.note)}</textarea>`;
-              tr.appendChild(tdNote);
-
-              // 11. 刪列
-              const tdOp = document.createElement('td');
-              tdOp.className = groupColorCls;
-              tdOp.style.textAlign = 'center';
-              tdOp.style.verticalAlign = 'middle';
-              tdOp.innerHTML = `<button class="btn-danger-ghost" onclick="deleteCriteria('${flow.id}','${mgmt.id}','${cr.id}')" title="刪除此列">✕</button>`;
-              tr.appendChild(tdOp);
-
-              tbody.appendChild(tr);
-            });
-          });
-        });
-      });
-    });
-  }
-
-  // ==================== 局部更新輸入事件 ====================
-  function onFlowNameInput(flowId, val) {
-    const f = appData.find(x => x.id === flowId);
-    if (!f) return;
-    f.flowName = val;
-    const inp = document.getElementById('inp_flow_' + flowId);
-    if (inp) inp.classList.toggle('input-error', !val.trim());
-    validateAllData();
-    renderStandardPreview();
-    renderChecklistPreview();
-    updateFlowBreakDropdown();
-    updateDiagram();
-    saveStateToLocalStorage();
-  }
-
-  function onMgmtNameInput(flowId, mgmtId, val) {
-    const f = appData.find(x => x.id === flowId);
-    if (!f) return;
-    const m = f.mgmtItems.find(x => x.id === mgmtId);
-    if (!m) return;
-    m.name = val;
-    const inp = document.getElementById('inp_mgmt_' + mgmtId);
-    if (inp) inp.classList.toggle('input-error', !val.trim());
-    validateAllData();
-    renderStandardPreview();
-    renderChecklistPreview();
-    saveStateToLocalStorage();
-  }
-
-  function onCriteriaInput(flowId, mgmtId, crId, field, val) {
-    const f = appData.find(x => x.id === flowId);
-    if (!f) return;
-    const m = f.mgmtItems.find(x => x.id === mgmtId);
-    if (!m) return;
-    const c = m.criteriaList.find(x => x.id === crId);
-    if (!c) return;
-    c[field] = val;
-
-    if (field === 'std') {
-      const el = document.getElementById('inp_std_' + crId);
-      if (el) el.classList.toggle('input-error', !val.trim());
-    } else if (field === 'freq') {
-      const el = document.getElementById('inp_freq_' + crId);
-      const errSpan = document.getElementById('err_freq_' + crId);
-      const isBad = (!val.trim()) || (m.isStopPoint && val.includes('不定期'));
-      if (el) el.classList.toggle('input-error', isBad);
-      if (errSpan) errSpan.style.display = (m.isStopPoint && val.includes('不定期')) ? 'inline-block' : 'none';
-    }
-    validateAllData();
-    renderStandardPreview();
-    renderChecklistPreview();
-    saveStateToLocalStorage();
-  }
-
-  function toggleCriteriaMainForm(flowId, mgmtId, crId, checked) {
-    const f = appData.find(x => x.id === flowId);
-    if (!f) return;
-    const m = f.mgmtItems.find(x => x.id === mgmtId);
-    if (!m) return;
-    const c = m.criteriaList.find(x => x.id === crId);
-    if (!c) return;
-    c.useMainForm = checked;
-    renderStandardPreview();
-    saveStateToLocalStorage();
-  }
-
-  function toggleFlowSafety(flowId, checked) {
-    const f = appData.find(x => x.id === flowId);
-    if (!f) return;
-    f.isSafetyPoint = checked;
-    if (checked && (!f.safetyFormIds || f.safetyFormIds.length === 0) && safetyForms.length > 0) {
-      f.safetyFormIds = [safetyForms[0].id];
-    }
-    refreshAllViews();
-  }
-
-  function toggleFlowSafetyFormItem(flowId, sfId, checked) {
-    const f = appData.find(x => x.id === flowId);
-    if (!f) return;
-    if (!f.safetyFormIds) f.safetyFormIds = [];
-    if (checked) {
-      if (!f.safetyFormIds.includes(sfId)) f.safetyFormIds.push(sfId);
-    } else {
-      f.safetyFormIds = f.safetyFormIds.filter(id => id !== sfId);
-    }
-    refreshAllViews();
-  }
-
-  function toggleMgmtStopPoint(flowId, mgmtId, checked) {
-    const f = appData.find(x => x.id === flowId);
-    if (!f) return;
-    const m = f.mgmtItems.find(x => x.id === mgmtId);
-    if (!m) return;
-    m.isStopPoint = checked;
-    refreshAllViews();
-  }
-
-  // ==================== 拖曳排序系統 ====================
-  function bindPhaseEmptyDropEvents(trEl, targetPhaseKey) {
-    trEl.addEventListener('dragover', (e) => {
-      if (!dragState.type || dragState.type !== 'flow') return;
-      e.preventDefault();
-      trEl.classList.add('drag-over-box');
-    });
-    trEl.addEventListener('dragleave', () => {
-      trEl.classList.remove('drag-over-box');
-    });
-    trEl.addEventListener('drop', (e) => {
-      e.preventDefault();
-      trEl.classList.remove('drag-over-box');
-      if (!dragState.type || dragState.type !== 'flow') return;
-      const fromIdx = appData.findIndex(f => String(f.id) === dragState.flowId);
-      if (fromIdx === -1) return;
-      const moved = appData.splice(fromIdx, 1)[0];
-      moved.phase = targetPhaseKey;
-      appData.push(moved);
-      refreshAllViews();
-    });
-  }
-
-  function bindPhaseHeaderDropEvents(tdPhaseEl, targetPhaseKey) {
-    tdPhaseEl.addEventListener('dragover', (e) => {
-      if (!dragState.type || dragState.type !== 'flow') return;
-      e.preventDefault();
-      const rect = tdPhaseEl.getBoundingClientRect();
-      const isBottom = (e.clientY - rect.top) > (rect.height / 2);
-      tdPhaseEl.classList.toggle('drag-over-top', !isBottom);
-      tdPhaseEl.classList.toggle('drag-over-bottom', isBottom);
-    });
-    tdPhaseEl.addEventListener('dragleave', () => {
-      tdPhaseEl.classList.remove('drag-over-top', 'drag-over-bottom');
-    });
-    tdPhaseEl.addEventListener('drop', (e) => {
-      e.preventDefault();
-      const rect = tdPhaseEl.getBoundingClientRect();
-      const isBottom = (e.clientY - rect.top) > (rect.height / 2);
-      tdPhaseEl.classList.remove('drag-over-top', 'drag-over-bottom');
-      if (!dragState.type || dragState.type !== 'flow') return;
-
-      const fromIdx = appData.findIndex(f => String(f.id) === dragState.flowId);
-      if (fromIdx === -1) return;
-      const moved = appData.splice(fromIdx, 1)[0];
-      moved.phase = targetPhaseKey;
-
-      if (!isBottom) {
-        const firstIdx = appData.findIndex(f => f.phase === targetPhaseKey);
-        if (firstIdx !== -1) appData.splice(firstIdx, 0, moved);
-        else appData.unshift(moved);
-      } else {
-        let lastIdx = -1;
-        appData.forEach((f, i) => { if (f.phase === targetPhaseKey) lastIdx = i; });
-        if (lastIdx !== -1) appData.splice(lastIdx + 1, 0, moved);
-        else appData.push(moved);
-      }
-      refreshAllViews();
-    });
-  }
-
-  function bindDragEvents(cellEl, type, flowId, mgmtId) {
-    const handle = cellEl.querySelector('.drag-handle');
-    if (handle) {
-      handle.addEventListener('mousedown', () => cellEl.setAttribute('draggable', 'true'));
-      handle.addEventListener('mouseup', () => cellEl.removeAttribute('draggable'));
-    }
-
-    cellEl.addEventListener('dragstart', (e) => {
-      if (cellEl.getAttribute('draggable') !== 'true') { e.preventDefault(); return; }
-      e.stopPropagation();
-      dragState = { type, flowId: String(flowId), mgmtId: mgmtId ? String(mgmtId) : null };
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', flowId);
-    });
-
-    cellEl.addEventListener('dragover', (e) => {
-      if (!dragState.type || dragState.type !== type) return;
-      if (type === 'mgmt' && String(flowId) !== dragState.flowId) return;
-      e.preventDefault();
-      e.stopPropagation();
-      const rect = cellEl.getBoundingClientRect();
-      const isBottom = (e.clientY - rect.top) > (rect.height / 2);
-      cellEl.classList.toggle('drag-over-top', !isBottom);
-      cellEl.classList.toggle('drag-over-bottom', isBottom);
-    });
-
-    cellEl.addEventListener('dragleave', () => {
-      cellEl.classList.remove('drag-over-top', 'drag-over-bottom');
-    });
-
-    cellEl.addEventListener('drop', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      cellEl.classList.remove('drag-over-top', 'drag-over-bottom');
-      if (!dragState.type || dragState.type !== type) return;
-
-      const rect = cellEl.getBoundingClientRect();
-      const isBottom = (e.clientY - rect.top) > (rect.height / 2);
-
-      if (type === 'flow') {
-        if (dragState.flowId === String(flowId)) return;
-        const fromIdx = appData.findIndex(f => String(f.id) === dragState.flowId);
-        const toIdx = appData.findIndex(f => String(f.id) === String(flowId));
-        if (fromIdx === -1 || toIdx === -1) return;
-        const targetPhase = appData[toIdx].phase;
-        const moved = appData.splice(fromIdx, 1)[0];
-        moved.phase = targetPhase;
-        const newToIdx = appData.findIndex(f => String(f.id) === String(flowId));
-        appData.splice(isBottom ? newToIdx + 1 : newToIdx, 0, moved);
-        refreshAllViews();
-      } else if (type === 'mgmt') {
-        if (String(flowId) !== dragState.flowId || dragState.mgmtId === String(mgmtId)) return;
-        const flowObj = appData.find(f => String(f.id) === String(flowId));
-        if (!flowObj) return;
-        const fromIdx = flowObj.mgmtItems.findIndex(m => String(m.id) === dragState.mgmtId);
-        const toIdx = flowObj.mgmtItems.findIndex(m => String(m.id) === String(mgmtId));
-        if (fromIdx === -1 || toIdx === -1) return;
-        const moved = flowObj.mgmtItems.splice(fromIdx, 1)[0];
-        const newToIdx = flowObj.mgmtItems.findIndex(m => String(m.id) === String(mgmtId));
-        flowObj.mgmtItems.splice(isBottom ? newToIdx + 1 : newToIdx, 0, moved);
-        refreshAllViews();
-      }
-    });
-
-    cellEl.addEventListener('dragend', () => {
-      cellEl.removeAttribute('draggable');
-      document.querySelectorAll('.drag-over-top, .drag-over-bottom, .drag-over-box').forEach(el => {
-        el.classList.remove('drag-over-top', 'drag-over-bottom', 'drag-over-box');
-      });
-      dragState = { type: null, flowId: null, mgmtId: null };
-    });
-  }
-
-  // ==================== 新增 / 刪除列操作 ====================
-  function addFlow(phaseKey) {
-    const uid = Date.now();
-    appData.push({
-      id: 'fl_' + uid,
-      phase: phaseKey,
-      flowName: '新施工工項',
-      isSafetyPoint: false,
-      safetyFormIds: [],
-      mgmtItems: [
-        {
-          id: 'mg_' + uid,
-          name: '新管理項目',
-          isStopPoint: false,
-          criteriaList: [
-            { id: 'cr_' + uid, std: '依設計圖說及規範辦理', method: '目視', freq: '每次', action: '改正', useMainForm: true, customRecord: '', note: '' }
-          ]
-        }
-      ]
-    });
-    refreshAllViews();
-  }
-
-  function deleteFlow(flowId) {
-    if (appData.length <= 1) { alert('至少需保留一個施工工項！'); return; }
-    appData = appData.filter(f => String(f.id) !== String(flowId));
-    if (String(splitTaskId) === String(flowId)) splitTaskId = null;
-    refreshAllViews();
-  }
-
-  function addMgmtItem(flowId) {
-    const f = appData.find(x => String(x.id) === String(flowId));
-    if (!f) return;
-    const uid = Date.now();
-    f.mgmtItems.push({
-      id: 'mg_' + uid,
-      name: '新管理項目',
-      isStopPoint: false,
-      criteriaList: [
-        { id: 'cr_' + uid, std: '', method: '目視', freq: '每次', action: '改正', useMainForm: true, customRecord: '', note: '' }
-      ]
-    });
-    refreshAllViews();
-  }
-
-  function deleteMgmtItem(flowId, mgmtId) {
-    const f = appData.find(x => String(x.id) === String(flowId));
-    if (!f) return;
-    if (f.mgmtItems.length <= 1) { alert('每個施工工項至少需保留一個管理項目(A)！'); return; }
-    f.mgmtItems = f.mgmtItems.filter(m => String(m.id) !== String(mgmtId));
-    refreshAllViews();
-  }
-
-  function addCriteria(flowId, mgmtId) {
-    const f = appData.find(x => String(x.id) === String(flowId));
-    if (!f) return;
-    const m = f.mgmtItems.find(x => String(x.id) === String(mgmtId));
-    if (!m) return;
-    const lastCr = m.criteriaList[m.criteriaList.length - 1];
-    m.criteriaList.push({
-      id: 'cr_' + Date.now(),
-      std: '',
-      method: lastCr ? lastCr.method : '目視',
-      freq: lastCr ? lastCr.freq : '每次',
-      action: lastCr ? lastCr.action : '改正',
-      useMainForm: lastCr ? lastCr.useMainForm : true,
-      customRecord: lastCr ? lastCr.customRecord : '',
-      note: ''
-    });
-    refreshAllViews();
-  }
-
-  function deleteCriteria(flowId, mgmtId, crId) {
-    const f = appData.find(x => String(x.id) === String(flowId));
-    if (!f) return;
-    const m = f.mgmtItems.find(x => String(x.id) === String(mgmtId));
-    if (!m) return;
-    if (m.criteriaList.length <= 1) {
-      deleteMgmtItem(flowId, mgmtId);
-      return;
-    }
-    m.criteriaList = m.criteriaList.filter(c => String(c.id) !== String(crId));
-    refreshAllViews();
-  }
-
-  function refreshAllViews(shouldSave = true) {
-    renderSafetyFormsManager();
-    renderStandardEditor();
-    validateAllData();
-    renderStandardPreview();
-    renderChecklistPreview();
-    updateFlowBreakDropdown();
-    updateDiagram();
-    if (shouldSave) saveStateToLocalStorage();
-  }
-
-  // ==================== 展平資料計算 Rowspan ====================
-  function buildFlattenedRows() {
-    const phaseOrder = ['pre', 'mid', 'post'];
-    const flatRows = [];
-
-    phaseOrder.forEach(pKey => {
-      const flowsInPhase = appData.filter(f => f.phase === pKey);
-      flowsInPhase.forEach(flow => {
-        flow.mgmtItems.forEach(mgmt => {
-          mgmt.criteriaList.forEach(cr => {
-            const composedRec = composeRecordText(flow, cr);
-            flatRows.push({
-              phase: pKey,
-              phaseLabel: getPhaseLabel(pKey),
-              flowId: flow.id,
-              flowName: flow.flowName,
-              isSafetyPoint: flow.isSafetyPoint,
-              safetyFormNames: getSafetyNamesByIds(flow.safetyFormIds),
-              mgmtId: mgmt.id,
-              mgmtName: mgmt.name,
-              isStopPoint: mgmt.isStopPoint,
-              crId: cr.id,
-              std: cr.std,
-              method: cr.method,
-              freq: cr.freq,
-              action: cr.action,
-              record: composedRec,
-              note: cr.note,
-              phaseSpan: 0, flowSpan: 0, mgmtSpan: 0, recordSpan: 0
-            });
-          });
-        });
-      });
-    });
-
-    for (let i = 0; i < flatRows.length; i++) {
-      if (i === 0 || flatRows[i].phase !== flatRows[i - 1].phase) {
-        let span = 1;
-        for (let j = i + 1; j < flatRows.length && flatRows[j].phase === flatRows[i].phase; j++) span++;
-        flatRows[i].phaseSpan = span;
-      }
-      if (i === 0 || flatRows[i].flowId !== flatRows[i - 1].flowId) {
-        let span = 1;
-        for (let j = i + 1; j < flatRows.length && flatRows[j].flowId === flatRows[i].flowId; j++) span++;
-        flatRows[i].flowSpan = span;
-      }
-      if (i === 0 || flatRows[i].mgmtId !== flatRows[i - 1].mgmtId) {
-        let span = 1;
-        for (let j = i + 1; j < flatRows.length && flatRows[j].mgmtId === flatRows[i].mgmtId; j++) span++;
-        flatRows[i].mgmtSpan = span;
-      }
-      const rec = (flatRows[i].record || '').trim();
-      if (!rec) {
-        flatRows[i].recordSpan = 1;
-      } else if (i === 0 || (flatRows[i - 1].record || '').trim() !== rec || flatRows[i - 1].phase !== flatRows[i].phase) {
-        let span = 1;
-        for (let j = i + 1; j < flatRows.length; j++) {
-          if ((flatRows[j].record || '').trim() === rec && flatRows[j].phase === flatRows[i].phase) span++;
-          else break;
-        }
-        flatRows[i].recordSpan = span;
-      }
-    }
-    return flatRows;
-  }
-
-  // ==================== 輸出 Word「抽查標準表」HTML (維持純白無底色) ====================
   function generateStandardTableHtml() {
     const stdTitle = document.getElementById('stdTitleInput').value.trim() || '（請填寫抽查標準表標題）';
     const flatRows = buildFlattenedRows();
@@ -1763,10 +1736,10 @@
     if (paper) paper.innerHTML = generateStandardTableHtml();
   }
 
-  // ==================== 輸出「施工抽查表單 (頁籤 2)」HTML ====================
   function generateChecklistTableHtml() {
     const planHeader = document.getElementById('chkPlanHeader').value.trim();
-    const docCode = document.getElementById('chkDocCode').value.trim();
+    const showIsoCode = document.getElementById('chkShowIsoCode').checked;
+    const docCode = showIsoCode ? document.getElementById('chkDocCode').value.trim() : '';
     const formTitle = document.getElementById('chkFormTitleInput').value.trim() || '（請填寫施工抽查表編號與名稱）';
     const projectName = document.getElementById('chkProjectName').value.trim();
     const subProject = document.getElementById('chkSubProject').value.trim();
@@ -1777,15 +1750,22 @@
     const showDefectBottom = document.getElementById('chkShowDefectBottom').checked;
 
     const flatRows = buildFlattenedRows();
+    const usedSafetyForms = getCheckedSafetyFormNames();
 
-    const usedSafetyForms = [];
-    appData.forEach(f => {
-      if (f.isSafetyPoint) {
-        getSafetyNamesByIds(f.safetyFormIds).forEach(sfName => {
-          if (sfName && !usedSafetyForms.includes(sfName)) usedSafetyForms.push(sfName);
-        });
-      }
-    });
+    const isoBoxHtml = showIsoCode ? `
+      <div style="width:100%; text-align:right; margin-bottom:2pt;">
+        <span style="display:inline-block; border:1pt solid #000000; padding:2pt 8pt; font-family:'標楷體','DFKai-SB',serif; font-size:12pt; font-weight:bold; color:#000000; white-space:nowrap;">
+          ${escapeHtml(docCode || '（請填寫ISO品質文件編號）')}
+        </span>
+      </div>
+    ` : '';
+
+    const titleBlockHtml = `
+      ${planHeader ? `<div align="center" style="text-align:center; font-family:'標楷體','DFKai-SB',serif; font-size:14pt; font-weight:bold; color:#000000; margin-bottom:3pt; line-height:1.1;">${escapeHtml(planHeader)}</div>` : ''}
+      <div align="center" style="text-align:center; font-family:'標楷體','DFKai-SB',serif; font-size:14pt; font-weight:bold; color:#000000; margin-bottom:6pt; line-height:1.1;">
+        ${colorizeSymbolsHtml(formTitle)}
+      </div>
+    `;
 
     const colgroupHtml = `
       <colgroup>
@@ -1897,18 +1877,15 @@
     }
 
     const rawHtml = `
-      ${planHeader ? `<div style="text-align:center; font-family:'標楷體','DFKai-SB',serif; font-size:14pt; font-weight:bold; color:#000000; margin-bottom:3pt; line-height:1.0;">${escapeHtml(planHeader)}</div>` : ''}
-      <div style="display:flex; justify-content:${docCode ? 'space-between' : 'center'}; align-items:baseline; font-family:'標楷體','DFKai-SB',serif; margin-bottom:6pt; line-height:1.0; color:#000000;">
-        <span style="font-size:14pt; font-weight:bold; color:#000000;">${colorizeSymbolsHtml(formTitle)}</span>
-        ${docCode ? `<span style="font-size:12pt; font-weight:bold; color:#000000;">${escapeHtml(docCode)}</span>` : ''}
-      </div>
+      ${isoBoxHtml}
+      ${titleBlockHtml}
 
       <table class="word-table word-table-thick" border="1" cellspacing="0" cellpadding="4" style="width:100%; border-collapse:collapse; font-family:'標楷體','DFKai-SB',serif; font-size:12pt; line-height:1.0; table-layout:fixed; mso-table-layout-alt:fixed;">
         ${colgroupHtml}
         <tr>
           <td colspan="3" style="font-weight:bold; font-size:12pt; line-height:1.0;">工程名稱</td>
           <td style="font-size:12pt; line-height:1.0;">${escapeHtml(projectName)}</td>
-          <td style="font-weight:bold; text-align:center; font-size:12pt; line-height:1.0;">編 號</td>
+          <td style="font-weight:bold; text-align:center; font-size:12pt; line-height:1.0;">抽查編號</td>
           <td colspan="2" style="font-size:12pt; line-height:1.0;">&nbsp;</td>
         </tr>
         <tr>
@@ -1965,10 +1942,11 @@
   }
 
   function renderChecklistPreview() {
-    document.getElementById('checklistPreviewPaper').innerHTML = generateChecklistTableHtml();
+    const paper = document.getElementById('checklistPreviewPaper');
+    if (paper) paper.innerHTML = generateChecklistTableHtml();
   }
 
-  // ==================== 施工流程圖 ====================
+  // ==================== 施工流程圖引擎 ====================
   function getMappedFlowData() {
     const phaseWeights = { 'pre': 1, 'mid': 2, 'post': 3 };
     const sortedFlows = [...appData].sort((a, b) => {
@@ -2004,14 +1982,7 @@
   function getAutoFormsData(maxCharsPerLine = 12) {
     const blueForm = document.getElementById('chkFormTitleInput').value.trim();
     const blueList = blueForm ? wrapFormLines(blueForm, maxCharsPerLine) : [];
-    const redRaw = [];
-    appData.forEach(f => {
-      if (f.isSafetyPoint) {
-        getSafetyNamesByIds(f.safetyFormIds).forEach(sfName => {
-          if (sfName && !redRaw.includes(sfName)) redRaw.push(sfName);
-        });
-      }
-    });
+    const redRaw = getCheckedSafetyFormNames();
     const redList = [];
     redRaw.forEach(r => {
       wrapFormLines(r, maxCharsPerLine).forEach(w => redList.push(w));
@@ -2028,7 +1999,7 @@
     midItems.forEach(item => {
       const globalIdx = flowData.findIndex(x => x.id === item.id);
       if (globalIdx < flowData.length - 1) {
-        const selected = String(splitTaskId) === String(item.id) ? 'selected' : '';
+        const selected = String(flowSettings.splitTaskId) === String(item.id) ? 'selected' : '';
         html += `<option value="${item.id}" ${selected}>於【施工中：${escapeHtml(item.text)}】後換至右欄</option>`;
       }
     });
@@ -2036,37 +2007,39 @@
   }
 
   function changeFlowBreak(val) {
-    splitTaskId = val ? val : null;
+    flowSettings.splitTaskId = val ? val : null;
     updateDiagram();
     saveStateToLocalStorage();
   }
 
   function adjustFlowParam(type, delta) {
-    if (type === 'width') nodeWidth = Math.max(100, Math.min(200, nodeWidth + delta));
-    else if (type === 'height') nodeHeight = Math.max(28, Math.min(60, nodeHeight + delta));
-    else if (type === 'font') fontSizePt = Math.max(8, Math.min(15, fontSizePt + delta));
-    else if (type === 'gap') verticalGap = Math.max(14, Math.min(46, verticalGap + delta));
+    if (type === 'width') flowSettings.nodeWidth = Math.max(100, Math.min(200, flowSettings.nodeWidth + delta));
+    else if (type === 'height') flowSettings.nodeHeight = Math.max(28, Math.min(60, flowSettings.nodeHeight + delta));
+    else if (type === 'font') flowSettings.fontSizePt = Math.max(8, Math.min(15, flowSettings.fontSizePt + delta));
+    else if (type === 'gap') flowSettings.verticalGap = Math.max(14, Math.min(46, flowSettings.verticalGap + delta));
 
-    document.getElementById('valWidth').textContent = nodeWidth + 'pt';
-    document.getElementById('valHeight').textContent = nodeHeight + 'pt';
-    document.getElementById('valFont').textContent = fontSizePt + 'pt';
-    document.getElementById('valGap').textContent = verticalGap + 'pt';
+    document.getElementById('valWidth').textContent = flowSettings.nodeWidth + 'pt';
+    document.getElementById('valHeight').textContent = flowSettings.nodeHeight + 'pt';
+    document.getElementById('valFont').textContent = flowSettings.fontSizePt + 'pt';
+    document.getElementById('valGap').textContent = flowSettings.verticalGap + 'pt';
     updateDiagram();
     saveStateToLocalStorage();
   }
 
   function toggleFlowPhases(checked) {
-    enablePhases = checked;
+    flowSettings.enablePhases = checked;
     updateDiagram();
     saveStateToLocalStorage();
   }
+
   function toggleFlowLegend(checked) {
-    enableLegend = checked;
+    flowSettings.enableLegend = checked;
     updateDiagram();
     saveStateToLocalStorage();
   }
 
   function formatNodeLines(text) {
+    const { nodeWidth } = flowSettings;
     if (!text) return [""];
     const maxCharsPerLine = Math.max(6, Math.floor(nodeWidth / 14.5));
     const sections = text.split(/\r?\n/);
@@ -2094,6 +2067,7 @@
   }
 
   function buildGeometryModel() {
+    const { enablePhases, enableLegend, splitTaskId, nodeWidth, nodeHeight, fontSizePt, verticalGap } = flowSettings;
     const sorted = getMappedFlowData();
     const breakIndex = splitTaskId ? sorted.findIndex(d => String(d.id) === String(splitTaskId)) : -1;
     const isDoubleCol = (breakIndex !== -1 && breakIndex < sorted.length - 1);
@@ -2447,9 +2421,11 @@
   }
 
   function updateDiagram() {
+    const { fontSizePt, enableLegend } = flowSettings;
     const geo = buildGeometryModel();
     const forms = getAutoFormsData(geo.maxFormChars);
     const svg = document.getElementById('svgPreview');
+    if (!svg) return;
 
     const svgTotalPageH = Math.max(A4_PAGE_H_PT, MARGIN_TOP_PT + geo.totalHeight + 35);
     svg.setAttribute('viewBox', `0 0 ${A4_PAGE_W_PT} ${svgTotalPageH}`);
@@ -2601,7 +2577,8 @@
     `;
   }
 
-  function buildWordVmlHtml() {
+  function buildWordVmlInnerOnly() {
+    const { fontSizePt, enableLegend } = flowSettings;
     const geo = buildGeometryModel();
     const forms = getAutoFormsData(geo.maxFormChars);
     let vml = '';
@@ -2731,6 +2708,14 @@
     }
 
     return `
+      <v:group style="position:relative;width:${geo.canvasWidth}pt;height:${geo.totalHeight}pt;" coordsize="${geo.canvasWidth},${geo.totalHeight}">
+        ${vml}
+      </v:group>
+    `;
+  }
+
+  function buildWordVmlHtml() {
+    return `
       <html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">
       <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -2749,9 +2734,7 @@
       </head>
       <body>
         <div class="Section1">
-          <v:group style="position:relative;width:${geo.canvasWidth}pt;height:${geo.totalHeight}pt;" coordsize="${geo.canvasWidth},${geo.totalHeight}">
-            ${vml}
-          </v:group>
+          ${buildWordVmlInnerOnly()}
         </div>
       </body>
       </html>
@@ -2765,11 +2748,14 @@
     area.innerHTML = '';
     area.focus();
   }
-  function closePasteModal() { document.getElementById('pasteModal').style.display = 'none'; }
+
+  function closePasteModal() {
+    document.getElementById('pasteModal').style.display = 'none';
+  }
 
   function parsePastedWordTable() {
     const area = document.getElementById('pasteEditableArea');
-    const tables = area.querySelectorAll('table');
+    const tables = Array.from(area.querySelectorAll('table'));
     if (tables.length === 0) {
       showToast('未偵測到 Word 表格結構，請從 Word 圈選標準表複製貼上！', true);
       return;
@@ -2800,46 +2786,78 @@
       }
     }
 
-    const dataRows = matrix.filter(row => {
-      const joined = row.join('');
-      if (!joined) return false;
-      if (joined.includes('管理項目') && joined.includes('抽查標準')) return false;
-      return true;
-    });
+    const isHeaderRow = (cols) => {
+      const joined = cols.join('').replace(/\s+/g, '');
+      if (!joined) return true;
+      if (joined.includes('管理項目(A)') || (joined.includes('管理項目') && (joined.includes('抽查標準') || joined.includes('檢查標準')))) return true;
+      if ((joined.includes('檢查方法') || joined.includes('抽查方法')) && (joined.includes('檢查頻率') || joined.includes('抽查頻率'))) return true;
+      return false;
+    };
 
-    if (dataRows.length === 0) {
-      showToast('表格內無有效資料列！', true);
-      return;
+    const colMap = { phase: -1, flow: -1, mgmt: -1, std: -1, timing: -1, method: -1, freq: -1, action: -1, record: -1, note: -1 };
+    if (matrix.length > 0) {
+      matrix[0].forEach((hText, idx) => {
+        const cleanH = String(hText || '').replace(/\s+/g, '');
+        if (cleanH.includes('施工流程') && colMap.flow === -1) {
+          if (colMap.phase === -1) colMap.phase = idx;
+          else colMap.flow = idx;
+        } else if (cleanH.includes('管理項目')) {
+          colMap.mgmt = idx;
+        } else if (cleanH.includes('抽查標準') || cleanH.includes('檢查標準')) {
+          colMap.std = idx;
+        } else if (cleanH.includes('抽查時機') || cleanH.includes('檢查時機')) {
+          colMap.timing = idx;
+        } else if (cleanH.includes('抽查方法') || cleanH.includes('檢查方法')) {
+          colMap.method = idx;
+        } else if (cleanH.includes('抽查頻率') || cleanH.includes('檢查頻率')) {
+          colMap.freq = idx;
+        } else if (cleanH.includes('不符合')) {
+          colMap.action = idx;
+        } else if (cleanH.includes('管理紀錄')) {
+          colMap.record = idx;
+        } else if (cleanH.includes('備註')) {
+          colMap.note = idx;
+        }
+      });
     }
 
     const newAppData = [];
+    const stripMarkers = (s) => String(s || '').replace(/[★※]/g, '').trim();
 
-    dataRows.forEach((cols, idx) => {
-      let phaseStr = '', flowStr = '', mgmtStr = '', stdStr = '', timingStr = '', methodStr = '目視', freqStr = '每次', actionStr = '改正', recStr = '', noteStr = '';
+    matrix.forEach((cols, idx) => {
+      if (isHeaderRow(cols)) return;
 
-      if (cols.length >= 9) {
+      let phaseStr = '', flowStr = '', mgmtStr = '', stdStr = '', timingStr = '', methodStr = '目視', freqStr = '每次', actionStr = '', recStr = '', noteStr = '';
+
+      if (colMap.mgmt !== -1 && colMap.std !== -1) {
+        mgmtStr = cols[colMap.mgmt] || '';
+        stdStr = cols[colMap.std] || '';
+        timingStr = colMap.timing !== -1 ? (cols[colMap.timing] || '') : '';
+        methodStr = colMap.method !== -1 ? (cols[colMap.method] || '目視') : '目視';
+        freqStr = colMap.freq !== -1 ? (cols[colMap.freq] || '每次') : '每次';
+        actionStr = colMap.action !== -1 ? (cols[colMap.action] || '') : '';
+        recStr = colMap.record !== -1 ? (cols[colMap.record] || '') : '';
+        noteStr = colMap.note !== -1 ? (cols[colMap.note] || '') : '';
+
+        if (colMap.phase !== -1 && colMap.flow !== -1) {
+          phaseStr = cols[colMap.phase] || '';
+          flowStr = cols[colMap.flow] || '';
+        } else if (colMap.phase !== -1) {
+          const rawP = cols[colMap.phase] || '';
+          phaseStr = rawP;
+          flowStr = rawP.replace(/^(施工前|施工中|施工後)\s*/g, '');
+        }
+      } else if (cols.length >= 8) {
         phaseStr = cols[0] || '';
         flowStr = cols[1] || '';
         mgmtStr = cols[2] || '';
         stdStr = cols[3] || '';
         timingStr = cols[4] || '';
-        if (!phaseStr.includes('施工')) phaseStr = timingStr;
         methodStr = cols[5] || '目視';
         freqStr = cols[6] || '每次';
-        actionStr = cols[7] || '改正';
+        actionStr = cols[7] || '';
         recStr = cols[8] || '';
         noteStr = cols[9] || '';
-      } else if (cols.length >= 7) {
-        flowStr = cols[0] || '';
-        mgmtStr = cols[1] || '';
-        stdStr = cols[2] || '';
-        timingStr = cols[3] || '施工中';
-        phaseStr = timingStr;
-        methodStr = cols[4] || '目視';
-        freqStr = cols[5] || '每次';
-        actionStr = cols[6] || '改正';
-        recStr = cols[7] || '';
-        noteStr = cols[8] || '';
       } else {
         return;
       }
@@ -2848,20 +2866,18 @@
       const hasStarAnywhere = rowAllText.includes('★');
       const hasSafetyAnywhere = rowAllText.includes('※');
 
-      const stripMarkers = (s) => String(s || '').replace(/[★※]/g, '').trim();
-
       phaseStr = stripMarkers(phaseStr);
-      flowStr = stripMarkers(flowStr).replace(/\s+/g, '');
+      flowStr = stripMarkers(flowStr).replace(/\s+/g, ' ').trim();
       mgmtStr = stripMarkers(mgmtStr);
       stdStr = stripMarkers(stdStr);
       methodStr = stripMarkers(methodStr).replace(/\s+/g, '');
       freqStr = stripMarkers(freqStr).replace(/\s+/g, '');
       actionStr = stripMarkers(actionStr).replace(/\s+/g, '');
-      recStr = stripMarkers(recStr).replace(/\s+/g, ' ');
+      recStr = stripMarkers(recStr).replace(/\s+/g, ' ').trim();
       noteStr = stripMarkers(noteStr);
 
       let phaseKey = 'mid';
-      const pCheck = (phaseStr + flowStr + timingStr).replace(/\s+/g, '');
+      const pCheck = (phaseStr + ' ' + timingStr).replace(/\s+/g, '');
       if (pCheck.includes('施工前')) phaseKey = 'pre';
       else if (pCheck.includes('施工後') || pCheck.includes('完成')) phaseKey = 'post';
 
@@ -2869,6 +2885,11 @@
         flowStr = phaseKey === 'pre' ? '施工前準備工作' : (phaseKey === 'post' ? '清理及檢視' : '施工作業');
       }
       if (!mgmtStr) mgmtStr = '一般查驗項目';
+
+      let finalAction = actionStr;
+      if (finalAction !== '不得施工' && finalAction !== '改正') {
+        finalAction = getDefaultActionByPhase(phaseKey);
+      }
 
       const baseUid = Date.now() + idx * 10;
 
@@ -2879,15 +2900,11 @@
           phase: phaseKey,
           flowName: flowStr,
           isSafetyPoint: hasSafetyAnywhere,
-          safetyFormIds: (hasSafetyAnywhere && safetyForms.length > 0) ? [safetyForms[0].id] : [],
           mgmtItems: []
         };
         newAppData.push(flowObj);
       } else if (hasSafetyAnywhere) {
         flowObj.isSafetyPoint = true;
-        if (flowObj.safetyFormIds.length === 0 && safetyForms.length > 0) {
-          flowObj.safetyFormIds = [safetyForms[0].id];
-        }
       }
 
       let mgmtObj = flowObj.mgmtItems.find(m => m.name === mgmtStr);
@@ -2903,10 +2920,8 @@
         mgmtObj.isStopPoint = true;
       }
 
-      let useMain = false;
       let customRec = recStr;
-      if (!recStr || recStr.includes('抽查')) {
-        useMain = true;
+      if (recStr.includes('抽查表') || recStr.includes('抽查紀錄')) {
         customRec = '';
       }
 
@@ -2915,27 +2930,27 @@
         std: stdStr,
         method: methodStr || '目視',
         freq: freqStr || '每次',
-        action: actionStr || '改正',
-        useMainForm: useMain,
+        action: finalAction,
         customRecord: customRec,
         note: noteStr
       });
     });
 
-    if (newAppData.length > 0) {
-      appData = newAppData;
-      splitTaskId = null;
-
-      document.getElementById('stdTitleInput').value = '';
-      document.getElementById('chkFormTitleInput').value = '';
-      document.getElementById('flowTitleInput').value = '';
-
-      closePasteModal();
-      refreshAllViews(true);
-      showToast(`🎉 成功匯入 ${newAppData.length} 個工項！已自動清空右上角 3 個表單標題，請記得填入新表單編號與名稱！`);
-    } else {
-      showToast('無法辨識表格欄位，請確認貼上的是標準表格式。', true);
+    if (newAppData.length === 0) {
+      showToast('表格內無有效資料列！', true);
+      return;
     }
+
+    appData = newAppData;
+    flowSettings.splitTaskId = null;
+
+    document.getElementById('stdTitleInput').value = '';
+    document.getElementById('chkFormTitleInput').value = '';
+    document.getElementById('flowTitleInput').value = '';
+
+    closePasteModal();
+    refreshAllViews(true);
+    showToast(`🎉 成功匯入 ${newAppData.length} 個工項！主編輯表、下方預覽與其他頁籤已同步刷新！`);
   }
 
   // ==================== 複製與下載 Word (.doc) ====================
@@ -2985,56 +3000,71 @@
   }
 
   function triggerDocDownload(fullHtml, filename) {
-    const blob = new Blob(['\ufeff' + fullHtml], { type: 'application/msword;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    try {
+      const safeName = (filename || '三階表單').replace(/[\\/:*?"<>|]/g, '_') + (filename.endsWith('.doc') ? '' : '.doc');
+      const blob = new Blob(['\ufeff' + fullHtml], { type: 'application/msword;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = safeName;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 300);
+    } catch (err) {
+      console.error('下載發生錯誤:', err);
+      showToast('下載失敗，請再試一次！', true);
+    }
   }
 
-  function copyStandardTableToClipboard() {
+  function copyStandardTable() {
     const html = wrapWordDocument(generateStandardTableHtml(), true);
     writeHtmlToClipboard(html, document.getElementById('stdTitleInput').value, '📋 已複製「抽查標準表」原生表格！請至 Word 按 Ctrl+V 貼上');
   }
+
   function downloadStandardDoc() {
     const errs = validateAllData();
     if (errs.length > 0 && !confirm(`目前尚有 ${errs.length} 項防呆提醒未修正，確定仍要下載嗎？`)) return;
     const title = document.getElementById('stdTitleInput').value.trim() || '施工抽查標準表';
     triggerDocDownload(wrapWordDocument(generateStandardTableHtml(), true), `${title}.doc`);
+    showToast(`💾 已下載：${title}.doc`);
   }
 
-  function copyChecklistToClipboard() {
+  function copyChecklist() {
     const html = wrapWordDocument(generateChecklistTableHtml(), false);
     writeHtmlToClipboard(html, document.getElementById('chkFormTitleInput').value, '📋 已複製「施工抽查表」原生表格！請至 Word 按 Ctrl+V 貼上');
   }
+
   function downloadChecklistDoc() {
     const errs = validateAllData();
     if (errs.length > 0 && !confirm(`目前尚有 ${errs.length} 項防呆提醒未修正，確定仍要下載嗎？`)) return;
     const title = document.getElementById('chkFormTitleInput').value.trim() || '施工抽查紀錄表';
     triggerDocDownload(wrapWordDocument(generateChecklistTableHtml(), false), `${title}.doc`);
+    showToast(`💾 已下載：${title}.doc`);
   }
 
-  function copyFlowVmlToClipboard() {
+  function copyFlowVml() {
     const html = buildWordVmlHtml();
     const sorted = getMappedFlowData();
     writeHtmlToClipboard(html, sorted.map(d => d.text).join(' -> '), '📋 已複製「施工流程圖」原生圖形！請至 Word 按 Ctrl+V 貼上');
   }
+
   function downloadFlowDoc() {
     const errs = validateAllData();
     if (errs.length > 0 && !confirm(`目前尚有 ${errs.length} 項防呆提醒未修正，確定仍要下載嗎？`)) return;
     const title = document.getElementById('flowTitleInput').value.trim() || '標準施工流程圖';
     triggerDocDownload(buildWordVmlHtml(), `${title}-施工流程圖.doc`);
+    showToast(`💾 已下載：${title}-施工流程圖.doc`);
   }
 
   function downloadAllThreeDocs() {
     const errs = validateAllData();
     if (errs.length > 0 && !confirm(`系統偵測到 ${errs.length} 項防呆提醒（黃框處），確定仍要打包匯出三階表單嗎？`)) return;
     const baseName = document.getElementById('flowTitleInput').value.trim() || '工程三階表單';
-    const flowVmlBody = buildWordVmlHtml().replace(/^[\s\S]*?<div class="Section1">/i, '').replace(/<\/div>\s*<\/body>[\s\S]*$/i, '');
+    const flowVmlInner = buildWordVmlInnerOnly();
 
     const combinedHtml = `
       <html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">
@@ -3059,7 +3089,7 @@
         </style>
       </head>
       <body>
-        <div class="SectionFlow">${flowVmlBody}</div>
+        <div class="SectionFlow">${flowVmlInner}</div>
         <br clear="all" style="page-break-before:always; mso-break-type:section-break" />
         <div class="SectionStd">${generateStandardTableHtml()}</div>
         <br clear="all" style="page-break-before:always; mso-break-type:section-break" />
@@ -3072,19 +3102,15 @@
     showToast('📦 已打包下載「三階表單整合總檔 (.doc)」！');
   }
 
-  function showToast(msg, isError = false) {
-    const t = document.getElementById('toastBox');
-    t.textContent = msg;
-    t.style.backgroundColor = isError ? '#b45309' : '#0f172a';
-    t.style.display = 'block';
-    clearTimeout(window._toastTimer);
-    window._toastTimer = setTimeout(() => { t.style.display = 'none'; }, 4500);
-  }
-
-  function escapeHtml(str) {
-    return String(str || '').replace(/[&<>'"]/g, tag => ({
-      '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-    }[tag] || tag));
+  function refreshAllViews(shouldSave = true) {
+    renderSafetyFormsManager();
+    renderStandardEditor();
+    validateAllData();
+    renderStandardPreview();
+    renderChecklistPreview();
+    updateFlowBreakDropdown();
+    updateDiagram();
+    if (shouldSave) saveStateToLocalStorage();
   }
 </script>
 </body>
