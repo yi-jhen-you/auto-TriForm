@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>工程三階表單半自動生成系統 V13</title>
+  <title>工程三階表單半自動生成系統 V15</title>
   <style>
     * { box-sizing: border-box; font-family: "Microsoft JhengHei", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { margin: 0; padding: 0; background-color: #e2e8f0; color: #0f172a; font-size: 14px; }
@@ -215,6 +215,7 @@
               <button type="button" class="sym-btn" onmousedown="insertSymbol(event, '≦')">≦</button>
               <button type="button" class="sym-btn" onmousedown="insertSymbol(event, '±')">±</button>
               <button type="button" class="sym-btn" onmousedown="insertSymbol(event, '°')">°</button>
+              <button type="button" class="sym-btn" onmousedown="insertSymbol(event, 'x̄')">x̄</button>
               <button type="button" class="sym-btn" onmousedown="insertSymbol(event, 'cm²')">cm²</button>
               <button type="button" class="sym-btn" onmousedown="insertSymbol(event, 'cm³')">cm³</button>
               <button type="button" class="sym-btn" onmousedown="insertSymbol(event, 'kgf/cm²')">kgf/cm²</button>
@@ -271,16 +272,16 @@
           </div>
           <div class="form-field">
             <label>1. 抽查標準表編號與名稱 (頁籤 1)：</label>
-            <input type="text" id="stdTitleInput" value="表 02448 隧道防水膜施工抽查標準" placeholder="請填入編號與名稱 (必填)" oninput="syncGlobalConfig()">
+            <input type="text" id="stdTitleInput" value="表 7-2-1 測量施工抽查標準" placeholder="請填入編號與名稱 (必填)" oninput="syncGlobalConfig()">
             <span id="err_stdTitle" class="err-msg" style="display:none;">⚠ 請填入抽查標準表標題與編號</span>
           </div>
           <div class="form-field">
             <label>2. 施工抽查表編號與名稱 (頁籤 2 & 管理紀錄 & 流程圖)：</label>
-            <input type="text" id="chkFormTitleInput" value="表 02448 隧道防水層施工抽查紀錄表" placeholder="請填入編號與名稱 (必填)" oninput="syncGlobalConfig()">
+            <input type="text" id="chkFormTitleInput" value="表 7-3-1 測量施工抽查表" placeholder="請填入編號與名稱 (必填)" oninput="syncGlobalConfig()">
             <span id="err_chkTitle" class="err-msg" style="display:none;">⚠ 請填入施工抽查表編號與名稱</span>
           </div>
           <div class="form-field" style="margin-bottom:4px;">
-            <label>3. 施工流程圖標題 (頁籤 3 頂部，不需加圖號)：</label>
+            <label>3. 施工流程圖標題 (頁籤 3 頂部)：</label>
             <input type="text" id="flowTitleInput" value="測量施工抽查流程圖" placeholder="例如：測量施工抽查流程圖" oninput="syncGlobalConfig()">
             <span id="err_flowTitle" class="err-msg" style="display:none;">⚠ 請填入施工流程圖標題</span>
           </div>
@@ -439,7 +440,7 @@
     <div class="modal-title">📋 智慧貼上 Word「抽查標準表」自動解析匯入</div>
     <p style="font-size:0.86rem; color:#475569; margin-top:0; line-height:1.5;">
       請在 Word 選取整張「抽查標準表」按 <code>Ctrl+C</code>，點擊下方虛線框按 <code>Ctrl+V</code> 貼上。<br>
-      ✨ <b>智慧歸位與防呆提醒</b>：系統會自動跳過重複表頭、依欄位名稱精準對應，並將 <b style="color:#0033CC;">★</b> 歸位至「管理項目(A)」、<b style="color:#CC0000;">※</b> 歸位至「施工工項」，同時<b>自動清空右上角 3 個表單標題（亮起黃框提醒您輸入新表號）</b>，並保留安衛表單索引庫！
+      ✨ <b>智慧歸位與防呆提醒</b>：系統會自動跳過重複表頭、依欄位名稱精準對應，將 <b style="color:#0033CC;">★</b> 歸位至「管理項目(A)」、<b style="color:#CC0000;">※</b> 歸位至「施工工項」，並在施工後最下方一律帶入預設管理標準「※清理 / ★環境 / 廢棄物搬離現場並清理乾淨 / 目視 / 每處」（不需要可自行刪除），同時<b>自動清空右上角 3 個表單標題（亮起黃框提醒輸入新編號與名稱）</b>，保留安衛表單索引庫！
     </p>
     <div id="pasteEditableArea" class="paste-editable" contenteditable="true"></div>
     <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -455,7 +456,7 @@
 <div id="toastBox" class="toast-fixed"></div>
 
 <script>
-  const STORAGE_KEY = 'THREE_TIER_FORM_SYSTEM_V13_STATE';
+  const STORAGE_KEY = 'THREE_TIER_FORM_SYSTEM_V15_STATE';
 
   const A4_PAGE_W_PT = 595;
   const A4_PAGE_H_PT = 842;
@@ -545,6 +546,34 @@
     return /\d/.test(String(str || ''));
   }
 
+  function createDefaultPostFlow() {
+    const uid = Date.now() + Math.floor(Math.random() * 1000);
+    return {
+      id: 'fl_post_' + uid,
+      phase: 'post',
+      flowName: '清理',
+      isSafetyPoint: true,
+      mgmtItems: [
+        {
+          id: 'mg_post_' + uid,
+          name: '環境',
+          isStopPoint: true,
+          criteriaList: [
+            {
+              id: 'cr_post_' + uid,
+              std: '廢棄物搬離現場並清理乾淨',
+              method: '目視',
+              freq: '每處',
+              action: '改正',
+              customRecord: '',
+              note: ''
+            }
+          ]
+        }
+      ]
+    };
+  }
+
   function getCheckedSafetyFormNames() {
     const anySafetyChecked = appData.some(f => !!f.isSafetyPoint);
     if (!anySafetyChecked) return [];
@@ -560,9 +589,13 @@
       parts.push(mainFormName);
     }
     if (cr.customRecord && cr.customRecord.trim()) {
-      parts.push(cr.customRecord.trim());
+      const extraClean = cr.customRecord.trim().replace(/\s*\/\s*/g, '/').replace(/\r?\n+/g, '/');
+      extraClean.split('/').forEach(seg => {
+        const s = seg.trim();
+        if (s && !parts.includes(s)) parts.push(s);
+      });
     }
-    return parts.join('\n');
+    return parts.join('/');
   }
 
   // ==================== 預設範例與狀態存取 ====================
@@ -602,7 +635,7 @@
           {
             id: 'mg_2', name: '測量儀器校正', isStopPoint: true,
             criteriaList: [
-              { id: 'cr_2', std: '經緯儀：垂直角指標差絕對值≦15 秒；水平角差絕對值≦15 秒', method: '文件查閱', freq: '每次', action: '不得施工', customRecord: mainRec, note: '' }
+              { id: 'cr_2', std: '經緯儀：垂直角指標差絕對值≦15 秒；水平角差絕對值≦15 秒', method: '文件查閱', freq: '每次', action: '不得施工', customRecord: '', note: '' }
             ]
           }
         ]
@@ -613,28 +646,18 @@
           {
             id: 'mg_3', name: '導線控制點檢測', isStopPoint: true,
             criteriaList: [
-              { id: 'cr_3', std: '閉合差符合契約及測量規範要求', method: '經緯儀、水準儀', freq: '每次', action: '改正', customRecord: mainRec, note: '' }
+              { id: 'cr_3', std: '閉合差符合契約及測量規範要求', method: '經緯儀、水準儀', freq: '每次', action: '改正', customRecord: '', note: '' }
             ]
           },
           {
             id: 'mg_4', name: '管線中心樁與高程放樣', isStopPoint: false,
             criteriaList: [
-              { id: 'cr_4', std: '位置及高程誤差±10mm以內', method: '鋼捲尺、水準儀', freq: '不定期', action: '改正', customRecord: mainRec, note: '' }
+              { id: 'cr_4', std: '位置及高程誤差±10mm以內', method: '鋼捲尺、水準儀', freq: '不定期', action: '改正', customRecord: '', note: '' }
             ]
           }
         ]
       },
-      {
-        id: 'fl_3', phase: 'post', flowName: '成果整理與樁位保護', isSafetyPoint: false,
-        mgmtItems: [
-          {
-            id: 'mg_5', name: '控制樁位保護及紀錄備查', isStopPoint: true,
-            criteriaList: [
-              { id: 'cr_5', std: '重要控制樁妥善保護並留存測量成果紀錄', method: '目視', freq: '每次', action: '改正', customRecord: mainRec, note: '' }
-            ]
-          }
-        ]
-      }
+      createDefaultPostFlow()
     ];
 
     flowSettings = {
@@ -657,7 +680,7 @@
   function saveStateToLocalStorage() {
     try {
       const stateObj = {
-        version: '13.0',
+        version: '15.0',
         savedAt: new Date().toISOString(),
         globalConfig: {
           stdTitle: document.getElementById('stdTitleInput').value,
@@ -983,10 +1006,11 @@
                   <span>${p.label}整段帶入「本施工抽查表」</span>
                 </label>
               </span>
-              <span style="font-size:0.78rem; color:#64748b; font-weight:normal;">若個別列需指定其他表單，可於該列「管理紀錄」填入</span>
+              <span style="font-size:0.78rem; color:#64748b; font-weight:normal;">拖曳工項至【${p.label}】任一位置即可跨階段移動</span>
             </div>
           </td>
         `;
+        bindPhaseDropTarget(phaseCtrlTr, p.key, 'start');
         tbody.appendChild(phaseCtrlTr);
 
         const flowsInPhase = appData.filter(f => f.phase === p.key);
@@ -1003,7 +1027,7 @@
               📥 目前【${p.label}】尚無工項，可點左側「＋工項」新增，或直接將其他工項拖曳至此處放入
             </td>
           `;
-          bindPhaseEmptyDropEvents(tr, p.key);
+          bindPhaseDropTarget(tr, p.key, 'end');
           tbody.appendChild(tr);
           return;
         }
@@ -1039,7 +1063,7 @@
                   <div style="font-size:1.02rem; line-height:1.35; margin-bottom:10px;">${p.label.split('').join('<br>')}</div>
                   <button class="btn btn-primary btn-xs" onclick="addFlow('${p.key}')" title="在${p.label}新增施工工項">＋工項</button>
                 `;
-                bindPhaseHeaderDropEvents(tdPhase, p.key);
+                bindPhaseDropTarget(tdPhase, p.key, 'smart');
                 tr.appendChild(tdPhase);
                 phaseCellRendered = true;
               }
@@ -1149,7 +1173,7 @@
               tdRecord.style.verticalAlign = 'middle';
               tdRecord.innerHTML = `
                 <div class="rec-compact-box">
-                  <textarea rows="2" class="cell-input" placeholder="${phaseMainFormChecked[p.key] ? '已帶入本施工抽查表（可另填其他表單）' : '其他表單 (如：核備文件)'}" oninput="onCriteriaInput('${flow.id}','${mgmt.id}','${cr.id}','customRecord',this.value)">${escapeHtml(cr.customRecord || '')}</textarea>
+                  <textarea rows="2" class="cell-input" placeholder="${phaseMainFormChecked[p.key] ? '已帶入本施工抽查表（可另填其他表單，以 / 分隔）' : '其他表單 (如：壓實度試驗報告)'}" oninput="onCriteriaInput('${flow.id}','${mgmt.id}','${cr.id}','customRecord',this.value)">${escapeHtml(cr.customRecord || '')}</textarea>
                 </div>
               `;
               tr.appendChild(tdRecord);
@@ -1243,62 +1267,69 @@
     refreshAllViews();
   }
 
-  function bindPhaseEmptyDropEvents(trEl, targetPhaseKey) {
-    trEl.addEventListener('dragover', (e) => {
-      if (!dragState.type || dragState.type !== 'flow') return;
-      e.preventDefault();
-      trEl.classList.add('drag-over-box');
+  function moveFlowToPhase(movedFlowId, targetPhaseKey, insertPosition = 'end', targetFlowId = null, isBottom = false) {
+    const fromIdx = appData.findIndex(f => String(f.id) === String(movedFlowId));
+    if (fromIdx === -1) return;
+
+    const moved = appData.splice(fromIdx, 1)[0];
+    moved.phase = targetPhaseKey;
+    moved.mgmtItems.forEach(m => {
+      m.criteriaList.forEach(c => {
+        c.action = getDefaultActionByPhase(targetPhaseKey);
+      });
     });
-    trEl.addEventListener('dragleave', () => trEl.classList.remove('drag-over-box'));
-    trEl.addEventListener('drop', (e) => {
-      e.preventDefault();
-      trEl.classList.remove('drag-over-box');
+
+    if (insertPosition === 'start') {
+      const firstIdx = appData.findIndex(f => f.phase === targetPhaseKey);
+      if (firstIdx !== -1) appData.splice(firstIdx, 0, moved);
+      else appData.unshift(moved);
+    } else if (targetFlowId) {
+      const toIdx = appData.findIndex(f => String(f.id) === String(targetFlowId));
+      if (toIdx !== -1) {
+        appData.splice(isBottom ? toIdx + 1 : toIdx, 0, moved);
+      } else {
+        appData.push(moved);
+      }
+    } else {
+      let lastIdx = -1;
+      appData.forEach((f, i) => { if (f.phase === targetPhaseKey) lastIdx = i; });
+      if (lastIdx !== -1) appData.splice(lastIdx + 1, 0, moved);
+      else appData.push(moved);
+    }
+
+    if (String(flowSettings.splitTaskId) === String(movedFlowId) && targetPhaseKey !== 'mid') {
+      flowSettings.splitTaskId = null;
+    }
+
+    refreshAllViews();
+    showToast(`已將工項「${moved.flowName}」移至【${getPhaseLabel(targetPhaseKey)}】`);
+  }
+
+  function bindPhaseDropTarget(el, targetPhaseKey, mode) {
+    el.addEventListener('dragover', (e) => {
       if (!dragState.type || dragState.type !== 'flow') return;
-      const fromIdx = appData.findIndex(f => String(f.id) === dragState.flowId);
-      if (fromIdx === -1) return;
-      const moved = appData.splice(fromIdx, 1)[0];
-      moved.phase = targetPhaseKey;
-      moved.mgmtItems.forEach(m => m.criteriaList.forEach(c => { c.action = getDefaultActionByPhase(targetPhaseKey); }));
-      appData.push(moved);
-      refreshAllViews();
+      e.preventDefault();
+      e.stopPropagation();
+      el.classList.add('drag-over-box');
+    });
+    el.addEventListener('dragleave', () => {
+      el.classList.remove('drag-over-box');
+    });
+    el.addEventListener('drop', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      el.classList.remove('drag-over-box');
+      if (!dragState.type || dragState.type !== 'flow') return;
+      moveFlowToPhase(dragState.flowId, targetPhaseKey, mode === 'start' ? 'start' : 'end', null, false);
     });
   }
 
+  function bindPhaseEmptyDropEvents(trEl, targetPhaseKey) {
+    bindPhaseDropTarget(trEl, targetPhaseKey, 'end');
+  }
+
   function bindPhaseHeaderDropEvents(tdPhaseEl, targetPhaseKey) {
-    tdPhaseEl.addEventListener('dragover', (e) => {
-      if (!dragState.type || dragState.type !== 'flow') return;
-      e.preventDefault();
-      const rect = tdPhaseEl.getBoundingClientRect();
-      const isBottom = (e.clientY - rect.top) > (rect.height / 2);
-      tdPhaseEl.classList.toggle('drag-over-top', !isBottom);
-      tdPhaseEl.classList.toggle('drag-over-bottom', isBottom);
-    });
-    tdPhaseEl.addEventListener('dragleave', () => tdPhaseEl.classList.remove('drag-over-top', 'drag-over-bottom'));
-    tdPhaseEl.addEventListener('drop', (e) => {
-      e.preventDefault();
-      const rect = tdPhaseEl.getBoundingClientRect();
-      const isBottom = (e.clientY - rect.top) > (rect.height / 2);
-      tdPhaseEl.classList.remove('drag-over-top', 'drag-over-bottom');
-      if (!dragState.type || dragState.type !== 'flow') return;
-
-      const fromIdx = appData.findIndex(f => String(f.id) === dragState.flowId);
-      if (fromIdx === -1) return;
-      const moved = appData.splice(fromIdx, 1)[0];
-      moved.phase = targetPhaseKey;
-      moved.mgmtItems.forEach(m => m.criteriaList.forEach(c => { c.action = getDefaultActionByPhase(targetPhaseKey); }));
-
-      if (!isBottom) {
-        const firstIdx = appData.findIndex(f => f.phase === targetPhaseKey);
-        if (firstIdx !== -1) appData.splice(firstIdx, 0, moved);
-        else appData.unshift(moved);
-      } else {
-        let lastIdx = -1;
-        appData.forEach((f, i) => { if (f.phase === targetPhaseKey) lastIdx = i; });
-        if (lastIdx !== -1) appData.splice(lastIdx + 1, 0, moved);
-        else appData.push(moved);
-      }
-      refreshAllViews();
-    });
+    bindPhaseDropTarget(tdPhaseEl, targetPhaseKey, 'end');
   }
 
   function bindDragEvents(cellEl, type, flowId, mgmtId) {
@@ -1313,7 +1344,7 @@
       e.stopPropagation();
       dragState = { type, flowId: String(flowId), mgmtId: mgmtId ? String(mgmtId) : null };
       e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', flowId);
+      e.dataTransfer.setData('text/plain', String(flowId));
     });
 
     cellEl.addEventListener('dragover', (e) => {
@@ -1340,16 +1371,9 @@
 
       if (type === 'flow') {
         if (dragState.flowId === String(flowId)) return;
-        const fromIdx = appData.findIndex(f => String(f.id) === dragState.flowId);
-        const toIdx = appData.findIndex(f => String(f.id) === String(flowId));
-        if (fromIdx === -1 || toIdx === -1) return;
-        const targetPhase = appData[toIdx].phase;
-        const moved = appData.splice(fromIdx, 1)[0];
-        moved.phase = targetPhase;
-        moved.mgmtItems.forEach(m => m.criteriaList.forEach(c => { c.action = getDefaultActionByPhase(targetPhase); }));
-        const newToIdx = appData.findIndex(f => String(f.id) === String(flowId));
-        appData.splice(isBottom ? newToIdx + 1 : newToIdx, 0, moved);
-        refreshAllViews();
+        const toFlow = appData.find(f => String(f.id) === String(flowId));
+        if (!toFlow) return;
+        moveFlowToPhase(dragState.flowId, toFlow.phase, 'item', flowId, isBottom);
       } else if (type === 'mgmt') {
         if (String(flowId) !== dragState.flowId || dragState.mgmtId === String(mgmtId)) return;
         const flowObj = appData.find(f => String(f.id) === String(flowId));
@@ -1530,7 +1554,6 @@
     return flatRows;
   }
 
-  // ==================== 強化版外框處理（確保 Word 中跨列與各外緣儲存格粗外框不消失） ====================
   function applyWordOuterThickBorders(htmlString) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlString, 'text/html');
@@ -1604,7 +1627,6 @@
             widthStyle = `;width:${cmStr} !important;mso-width-alt:auto;`;
           }
 
-          // 需求 3：外緣四邊皆寫入明確的 2.25pt 實線與 mso-border 屬性，避免 Word 漏繪粗框
           const isTopEdge = (minR === 0);
           const isBottomEdge = (maxR === maxRows - 1);
           const isLeftEdge = (minC === 0);
@@ -1621,7 +1643,6 @@
         }
       }
 
-      // 同時為表格設定整體外框樣式
       const tStyle = table.getAttribute('style') || '';
       table.setAttribute(
         'style',
@@ -1632,7 +1653,6 @@
     return doc.body.innerHTML;
   }
 
-  // 需求 2：抽查標準表編號+名稱預設靠左、字體 12pt
   function generateStandardTableHtml() {
     const stdTitle = document.getElementById('stdTitleInput').value.trim() || '（請填寫抽查標準表標題）';
     const flatRows = buildFlattenedRows();
@@ -2050,7 +2070,6 @@
     const breakIndex = splitTaskId ? sorted.findIndex(d => String(d.id) === String(splitTaskId)) : -1;
     const isDoubleCol = (breakIndex !== -1 && breakIndex < sorted.length - 1);
     const renderPhases = enablePhases;
-    // 需求 1：預設不加圖號，顯示「測量施工抽查流程圖」或輸入的流程圖標題
     const flowHeaderTitle = document.getElementById('flowTitleInput').value.trim() || '（請填寫抽查流程圖標題）';
 
     let startW = Math.round(nodeWidth * 0.8);
@@ -2920,6 +2939,9 @@
       return;
     }
 
+    // 无论原本是否有清理或施工後項目，一律在施工後最下方帶入預設管理標準（不需要可自行刪除）
+    newAppData.push(createDefaultPostFlow());
+
     appData = newAppData;
     flowSettings.splitTaskId = null;
 
@@ -2929,7 +2951,7 @@
 
     closePasteModal();
     refreshAllViews(true);
-    showToast(`🎉 成功匯入 ${newAppData.length} 個工項！主編輯表、下方預覽與其他頁籤已同步刷新！`);
+    showToast(`🎉 成功匯入 ${newAppData.length} 個工項！已於施工後最下方帶入預設管理標準並刷新全站！`);
   }
 
   // ==================== 複製與下載 Word (.doc) ====================
@@ -3050,10 +3072,7 @@
       <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
         <!--[if gte mso 9]>
-        <xml>
-          <w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument>
-          <o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings>
-        </xml>
+        <xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml>
         <![endif]-->
         <style>
           v\\:* { behavior: url(#default#VML); display: inline-block; }
