@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>工程三階表單半自動生成系統 V15</title>
+  <title>工程三階表單半自動生成系統 V16</title>
   <style>
     * { box-sizing: border-box; font-family: "Microsoft JhengHei", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { margin: 0; padding: 0; background-color: #e2e8f0; color: #0f172a; font-size: 14px; }
@@ -197,7 +197,7 @@
         <div class="card card-red">
           <div class="card-title">
             <div>
-              <span style="font-size:1.06rem; color:#1e293b;">📋 施工抽查標準表（管理項目採區塊深淺交錯，按住 <b style="color:#2563eb;">☰</b> 可跨階段或頭尾拖曳排序）</span>
+              <span style="font-size:1.06rem; color:#1e293b;">📋 施工抽查標準表（管理項目可跨工項/跨階段拖曳整合，按住 <b style="color:#2563eb;">☰</b> 即可拖曳）</span>
             </div>
             <div style="display:flex; gap:8px;">
               <button class="btn btn-primary" onclick="copyStandardTable()">📋 複製標準表 (貼上 Word)</button>
@@ -237,11 +237,11 @@
                 <tr>
                   <th style="width:54px;">階段</th>
                   <th style="width:170px;">施工工項 (流程)<br><small style="color:#dc2626;">(勾選 ※ 安衛點)</small></th>
-                  <th style="width:170px;">管理項目 (A)<br><small style="color:#0033CC;">(勾選 ★ 檢驗停留點)</small></th>
+                  <th style="width:170px;">管理項目 (A)<br><small style="color:#0033CC;">(勾選 ★ 檢驗停留點，可跨工項/階段拖曳)</small></th>
                   <th style="width:235px;">抽查標準 (B)<br><small style="color:#475569;">(定量 / 定性標準)</small></th>
                   <th style="width:56px;">抽查<br>時機</th>
                   <th style="width:85px;">抽查方法</th>
-                  <th style="width:85px;">抽查頻率<br><small style="color:#a16207;">(★禁填不定期)</small></th>
+                  <th style="width:85px;">抽查頻率<br><small style="color:#a16207;">(檢驗停留點禁填不定期)</small></th>
                   <th style="width:88px;">不符合之<br>處置方法</th>
                   <th style="width:150px;">管理紀錄<br><small style="color:#475569;">(階段勾選本表 / 填其他表)</small></th>
                   <th style="width:65px;">備註</th>
@@ -456,7 +456,7 @@
 <div id="toastBox" class="toast-fixed"></div>
 
 <script>
-  const STORAGE_KEY = 'THREE_TIER_FORM_SYSTEM_V15_STATE';
+  const STORAGE_KEY = 'THREE_TIER_FORM_SYSTEM_V16_STATE';
 
   const A4_PAGE_W_PT = 595;
   const A4_PAGE_H_PT = 842;
@@ -621,7 +621,6 @@
     document.getElementById('chkShowSafetyBottom').checked = true;
     document.getElementById('chkShowDefectBottom').checked = true;
 
-    const mainRec = '表 7-3-1 測量施工抽查表';
     appData = [
       {
         id: 'fl_1', phase: 'pre', flowName: '校核文件及儀器', isSafetyPoint: false,
@@ -680,7 +679,7 @@
   function saveStateToLocalStorage() {
     try {
       const stateObj = {
-        version: '15.0',
+        version: '16.0',
         savedAt: new Date().toISOString(),
         globalConfig: {
           stdTitle: document.getElementById('stdTitleInput').value,
@@ -1006,7 +1005,7 @@
                   <span>${p.label}整段帶入「本施工抽查表」</span>
                 </label>
               </span>
-              <span style="font-size:0.78rem; color:#64748b; font-weight:normal;">拖曳工項至【${p.label}】任一位置即可跨階段移動</span>
+              <span style="font-size:0.78rem; color:#64748b; font-weight:normal;">拖曳工項或管理項目至【${p.label}】即可跨階段調整</span>
             </div>
           </td>
         `;
@@ -1106,7 +1105,7 @@
 
                 tdMgmt.innerHTML = `
                   <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
-                    <span class="drag-handle" title="按住上下拖曳此管理項目順序">☰ 拖曳</span>
+                    <span class="drag-handle" title="按住拖曳此管理項目（可跨工項或跨階段移動）">☰ 拖曳</span>
                     <div style="display:flex; gap:4px;">
                       <button class="btn btn-outline btn-xs" onclick="addCriteria('${flow.id}','${mgmt.id}')" title="新增一列抽查標準(B)">＋標準列</button>
                       <button class="btn-danger-ghost" onclick="deleteMgmtItem('${flow.id}','${mgmt.id}')" title="刪除此管理項目">✕</button>
@@ -1305,9 +1304,51 @@
     showToast(`已將工項「${moved.flowName}」移至【${getPhaseLabel(targetPhaseKey)}】`);
   }
 
+  // 跨工項 / 跨階段移動「管理項目 (A)」
+  function moveMgmtItemToTarget(srcFlowId, srcMgmtId, dstFlowId, dstMgmtId = null, isBottom = true) {
+    const srcFlow = appData.find(f => String(f.id) === String(srcFlowId));
+    const dstFlow = appData.find(f => String(f.id) === String(dstFlowId));
+    if (!srcFlow || !dstFlow) return;
+
+    const srcMgmtIdx = srcFlow.mgmtItems.findIndex(m => String(m.id) === String(srcMgmtId));
+    if (srcMgmtIdx === -1) return;
+
+    // 防止來源工項失去所有管理項目
+    if (srcFlow.mgmtItems.length <= 1) {
+      showToast('原施工工項至少需保留 1 個管理項目，無法全部移出！', true);
+      return;
+    }
+
+    const [movedMgmt] = srcFlow.mgmtItems.splice(srcMgmtIdx, 1);
+
+    // 若跨不同施工階段移動，自動依目標階段更新處置方法預設值
+    if (srcFlow.phase !== dstFlow.phase) {
+      movedMgmt.criteriaList.forEach(cr => {
+        cr.action = getDefaultActionByPhase(dstFlow.phase);
+      });
+    }
+
+    if (dstMgmtId) {
+      const dstMgmtIdx = dstFlow.mgmtItems.findIndex(m => String(m.id) === String(dstMgmtId));
+      if (dstMgmtIdx !== -1) {
+        dstFlow.mgmtItems.splice(isBottom ? dstMgmtIdx + 1 : dstMgmtIdx, 0, movedMgmt);
+      } else {
+        dstFlow.mgmtItems.push(movedMgmt);
+      }
+    } else {
+      dstFlow.mgmtItems.push(movedMgmt);
+    }
+
+    refreshAllViews();
+    const crossStageMsg = srcFlow.phase !== dstFlow.phase
+      ? `（已跨階段移至【${getPhaseLabel(dstFlow.phase)}】：${dstFlow.flowName}）`
+      : `（已移至工項：${dstFlow.flowName}）`;
+    showToast(`已將管理項目「${movedMgmt.name}」${crossStageMsg}`);
+  }
+
   function bindPhaseDropTarget(el, targetPhaseKey, mode) {
     el.addEventListener('dragover', (e) => {
-      if (!dragState.type || dragState.type !== 'flow') return;
+      if (!dragState.type) return;
       e.preventDefault();
       e.stopPropagation();
       el.classList.add('drag-over-box');
@@ -1319,8 +1360,19 @@
       e.preventDefault();
       e.stopPropagation();
       el.classList.remove('drag-over-box');
-      if (!dragState.type || dragState.type !== 'flow') return;
-      moveFlowToPhase(dragState.flowId, targetPhaseKey, mode === 'start' ? 'start' : 'end', null, false);
+      if (!dragState.type) return;
+
+      if (dragState.type === 'flow') {
+        moveFlowToPhase(dragState.flowId, targetPhaseKey, mode === 'start' ? 'start' : 'end', null, false);
+      } else if (dragState.type === 'mgmt') {
+        const flowsInStage = appData.filter(f => f.phase === targetPhaseKey);
+        if (flowsInStage.length > 0) {
+          const targetFlow = flowsInStage[flowsInStage.length - 1];
+          moveMgmtItemToTarget(dragState.flowId, dragState.mgmtId, targetFlow.id, null, true);
+        } else {
+          showToast(`【${getPhaseLabel(targetPhaseKey)}】目前沒有施工工項，請先新增或拖入工項！`, true);
+        }
+      }
     });
   }
 
@@ -1344,12 +1396,13 @@
       e.stopPropagation();
       dragState = { type, flowId: String(flowId), mgmtId: mgmtId ? String(mgmtId) : null };
       e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', String(flowId));
+      e.dataTransfer.setData('text/plain', String(mgmtId || flowId));
     });
 
     cellEl.addEventListener('dragover', (e) => {
-      if (!dragState.type || dragState.type !== type) return;
-      if (type === 'mgmt' && String(flowId) !== dragState.flowId) return;
+      if (!dragState.type) return;
+      // 支援管理項目拖到任何其他管理項目格，或拖到其他施工工項格
+      if (dragState.type === 'flow' && type !== 'flow') return;
       e.preventDefault();
       e.stopPropagation();
       const rect = cellEl.getBoundingClientRect();
@@ -1364,27 +1417,24 @@
       e.preventDefault();
       e.stopPropagation();
       cellEl.classList.remove('drag-over-top', 'drag-over-bottom');
-      if (!dragState.type || dragState.type !== type) return;
+      if (!dragState.type) return;
 
       const rect = cellEl.getBoundingClientRect();
       const isBottom = (e.clientY - rect.top) > (rect.height / 2);
 
-      if (type === 'flow') {
+      if (dragState.type === 'flow' && type === 'flow') {
         if (dragState.flowId === String(flowId)) return;
         const toFlow = appData.find(f => String(f.id) === String(flowId));
         if (!toFlow) return;
         moveFlowToPhase(dragState.flowId, toFlow.phase, 'item', flowId, isBottom);
-      } else if (type === 'mgmt') {
-        if (String(flowId) !== dragState.flowId || dragState.mgmtId === String(mgmtId)) return;
-        const flowObj = appData.find(f => String(f.id) === String(flowId));
-        if (!flowObj) return;
-        const fromIdx = flowObj.mgmtItems.findIndex(m => String(m.id) === dragState.mgmtId);
-        const toIdx = flowObj.mgmtItems.findIndex(m => String(m.id) === String(mgmtId));
-        if (fromIdx === -1 || toIdx === -1) return;
-        const moved = flowObj.mgmtItems.splice(fromIdx, 1)[0];
-        const newToIdx = flowObj.mgmtItems.findIndex(m => String(m.id) === String(mgmtId));
-        flowObj.mgmtItems.splice(isBottom ? newToIdx + 1 : newToIdx, 0, moved);
-        refreshAllViews();
+      } else if (dragState.type === 'mgmt') {
+        if (type === 'mgmt') {
+          if (dragState.flowId === String(flowId) && dragState.mgmtId === String(mgmtId)) return;
+          moveMgmtItemToTarget(dragState.flowId, dragState.mgmtId, flowId, mgmtId, isBottom);
+        } else if (type === 'flow') {
+          // 拖曳管理項目直接放進目標施工工項格
+          moveMgmtItemToTarget(dragState.flowId, dragState.mgmtId, flowId, null, true);
+        }
       }
     });
 
@@ -2882,7 +2932,7 @@
       if (!flowStr || flowStr === '施工前' || flowStr === '施工中' || flowStr === '施工後') {
         flowStr = phaseKey === 'pre' ? '施工前準備工作' : (phaseKey === 'post' ? '清理及檢視' : '施工作業');
       }
-      if (!mgmtStr) mgmtStr = '一般查驗項目';
+      if (!mgmtStr) mgmtStr = phaseKey === 'post' ? '環境' : '一般查驗項目';
 
       let finalAction = actionStr;
       if (finalAction !== '不得施工' && finalAction !== '改正') {
@@ -2939,7 +2989,7 @@
       return;
     }
 
-    // 无论原本是否有清理或施工後項目，一律在施工後最下方帶入預設管理標準（不需要可自行刪除）
+    // 無論原本是否有清理或施工後項目，一律在施工後最下方帶入預設管理標準（不需要可自行刪除）
     newAppData.push(createDefaultPostFlow());
 
     appData = newAppData;
